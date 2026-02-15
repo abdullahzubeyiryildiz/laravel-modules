@@ -209,7 +209,4 @@ GitHub: [@abdullahzubeyiryildiz](https://github.com/abdullahzubeyiryildiz)
 Pull request'ler memnuniyetle karşılanır. Büyük değişiklikler için lütfen önce bir issue açarak neyi değiştirmek istediğinizi tartışın.
 
 ---
-
-## 📞 Destek
-
-Sorularınız için issue açabilirsiniz.
+ 

@@ -1,0 +1,17 @@
+{
+    "name": "abdullahzubeyiryildiz/laravel-modules",
+    "description": "Modüler Laravel paketleri koleksiyonu - Monorepo",
+    "type": "metapackage",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Abdullah Zubeyir Yıldız",
+            "email": "abdullahzubeyiryildiz@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^8.2"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

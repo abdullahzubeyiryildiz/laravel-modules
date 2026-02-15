@@ -2,37 +2,48 @@
 
 Role-Based Access Control (RBAC) modülü - **OPSIYONEL**
 
-## 📋 Açıklama
-
-Bu modül, gelişmiş rol ve yetki yönetimi için kullanılır. **Her projede kullanılması zorunlu değildir.**
+Gelişmiş rol ve yetki yönetimi için kullanılır. **Her projede kullanılması zorunlu değildir.**
 
 ## ⚠️ Önemli Notlar
 
-- ✅ **Opsiyonel Modül**: Diğer modüller bu modül olmadan da çalışır
-- ✅ **Auth Module**: RBAC'a bağımlı değil (kendi `RoleService`'i var)
-- ✅ **File Manager Module**: RBAC sadece audit logs için opsiyonel kullanır
+- ✅ **Opsiyonel Modül:** Diğer modüller bu modül olmadan da çalışır
+- ✅ **Auth Module:** RBAC'a bağımlı değil (kendi `RoleService`'i var)
+- ✅ **File Manager Module:** RBAC sadece audit logs için opsiyonel kullanır
 
-## 🚀 Kurulum
+## 📦 Kurulum
 
-### Composer ile Kurulum
+### 1. Composer.json'a Repository Ekle
+
+```json
+{
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/abdullahzubeyiryildiz/laravel-modules"
+        }
+    ]
+}
+```
+
+### 2. Paketi Yükle
 
 ```bash
 composer require modules/rbac-module:dev-main
 ```
 
-### Migration'ları Çalıştır
+### 3. Migration'ları Çalıştır
 
 ```bash
 php artisan migrate
 ```
 
-### Config Yayınla
+### 4. Config Yayınla
 
 ```bash
 php artisan vendor:publish --tag=rbac-module-config
 ```
 
-## 📦 Ne Zaman Kullanılır?
+## 🎯 Ne Zaman Kullanılır?
 
 ### ✅ Kullanın Eğer:
 
@@ -97,13 +108,17 @@ if (class_exists(\Modules\RbacModule\Services\AuditLogService::class)) {
 ```
 
 **RBAC yoksa:** Dosya yükleme çalışır, sadece audit log yapılmaz.
+ 
+## 📝 Gereksinimler
 
-## 📚 Dokümantasyon
-
-Detaylı kullanım için:
-- `RBAC_OPSIYONEL_KULLANIM.md` - Opsiyonel kullanım rehberi
-- `SaaS_VERITABANI_DOKUMANTASYON.md` - RBAC sistemi detayları
+- PHP >= 8.2
+- Laravel >= 12.0
 
 ## 📝 Lisans
 
 MIT
+
+## 👤 Yazar
+
+**Abdullah Zubeyir Yıldız**  
+GitHub: [@abdullahzubeyiryildiz](https://github.com/abdullahzubeyiryildiz)

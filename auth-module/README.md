@@ -1,32 +1,54 @@
-# Modul Auth Module
+# Auth Module
 
 Laravel authentication modülü. Login, Register ve Password Reset özelliklerini içerir. Hem tek tenant hem de multi-tenant uygulamalarda kullanılabilir. Web ve API endpoint'leri ile Next.js entegrasyonu destekler.
 
-## Özellikler
+## ✨ Özellikler
 
 - ✅ Kullanıcı Girişi (Login)
 - ✅ Kullanıcı Kaydı (Register)
 - ✅ Şifre Sıfırlama (Password Reset)
-- ✅ Multi-Tenant Desteği
+- ✅ Social Login (Google, Facebook) - Opsiyonel
+- ✅ Multi-Tenant Desteği - Opsiyonel
+- ✅ Profil Yönetimi (Edit, Avatar, Change Password)
+- ✅ Otomatik Trait Kurulumu (HasSocialAccounts, HasTenantAndRole)
 - ✅ Özelleştirilebilir Route'lar
 - ✅ Özelleştirilebilir View'lar
 - ✅ Config dosyası ile tam kontrol
 
-## Kurulum
+## 📦 Kurulum
 
-### 1. Paketi Yükle
+### 1. Composer.json'a Repository Ekle
 
-```bash
-composer require modules/auth-module
+```json
+{
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/abdullahzubeyiryildiz/laravel-modules"
+        }
+    ]
+}
 ```
 
-### 2. Config Yayınla
+### 2. Paketi Yükle
 
 ```bash
-php artisan vendor:publish --tag=auth-module-config
+composer require modules/auth-module:dev-main
 ```
 
-### 3. (Opsiyonel) API için Sanctum Kur
+### 3. Migration'ları Çalıştır
+
+```bash
+php artisan migrate
+```
+
+**✅ Trait'ler otomatik olarak User model'ine eklenir!**
+
+Otomatik olarak eklenenler:
+- `HasSocialAccounts` trait (social accounts için)
+- `HasTenantAndRole` trait (tenant ve role method'ları için)
+
+### 4. (Opsiyonel) API için Sanctum Kur
 
 API endpoint'lerini kullanmak için:
 
@@ -46,38 +68,45 @@ class User extends Authenticatable
 }
 ```
 
-### 4. Hazır! 🎉
+## 🚀 Kullanım
 
-**Multi-tenant olmadan kullanım için başka bir şey yapmanıza gerek yok!**
+### Web Routes
 
-Paket varsayılan olarak multi-tenant kapalı çalışır. Sadece standart Laravel User modeliniz olması yeterli.
+Paket otomatik olarak aşağıdaki route'ları oluşturur:
 
-### Manuel Kurulum
+- `GET /login` - Giriş sayfası
+- `POST /login` - Giriş işlemi
+- `GET /register` - Kayıt sayfası
+- `POST /register` - Kayıt işlemi
+- `POST /logout` - Çıkış işlemi
+- `GET /password/reset` - Şifre sıfırlama isteği
+- `POST /password/email` - Şifre sıfırlama linki gönder
+- `GET /password/reset/{token}` - Şifre sıfırlama formu
+- `POST /password/reset` - Şifre sıfırlama işlemi
 
-1. Paketi `packages/modules/auth-module` klasörüne kopyalayın
-2. `composer.json` dosyanıza ekleyin:
+### API Endpoints
 
-```json
-{
-    "repositories": [
-        {
-            "type": "path",
-            "url": "./packages/modules/auth-module"
-        }
-    ],
-    "require": {
-        "modules/auth-module": "*"
-    }
-}
-```
+- `POST /api/auth/login` - Kullanıcı girişi
+- `POST /api/auth/register` - Kullanıcı kaydı
+- `POST /api/auth/logout` - Kullanıcı çıkışı (Auth required)
+- `GET /api/auth/me` - Mevcut kullanıcı bilgileri (Auth required)
+- `POST /api/auth/password/request` - Şifre sıfırlama isteği
+- `POST /api/auth/password/reset` - Şifre sıfırlama
 
-3. Composer'ı güncelleyin:
+### Profile API
 
-```bash
-composer update
-```
+- `GET /api/auth/profile` - Profil bilgileri
+- `PUT /api/auth/profile` - Profil güncelle
+- `POST /api/auth/profile/avatar` - Avatar yükle
+- `DELETE /api/auth/profile/avatar` - Avatar sil
+- `POST /api/auth/profile/change-password` - Şifre değiştir
 
-## Yapılandırma
+### Social Login (Opsiyonel)
+
+- `GET /auth/{provider}` - Social provider'a yönlendir
+- `GET /auth/{provider}/callback` - Social provider'dan dönüş
+
+## 🔧 Yapılandırma
 
 ### Config Dosyasını Yayınla
 
@@ -104,23 +133,20 @@ php artisan vendor:publish --tag=auth-module-views
 
 View'lar `resources/views/vendor/auth-module` klasörüne kopyalanır.
 
-## Kullanım
+## 📋 Otomatik Kurulum
 
-### Route'lar
+Paket kurulduğunda **otomatik olarak** User model'ine trait'ler eklenir:
 
-Paket otomatik olarak aşağıdaki route'ları oluşturur:
+- ✅ `HasSocialAccounts` - Social accounts için
+- ✅ `HasTenantAndRole` - Tenant ve role method'ları için
 
-- `GET /login` - Giriş sayfası
-- `POST /login` - Giriş işlemi
-- `GET /register` - Kayıt sayfası
-- `POST /register` - Kayıt işlemi
-- `POST /logout` - Çıkış işlemi
-- `GET /password/reset` - Şifre sıfırlama isteği
-- `POST /password/email` - Şifre sıfırlama linki gönder
-- `GET /password/reset/{token}` - Şifre sıfırlama formu
-- `POST /password/reset` - Şifre sıfırlama işlemi
+Manuel kurulum gerekmez! Eğer otomatik eklenmezse:
 
-### Multi-Tenant Kullanımı (Opsiyonel)
+```bash
+php artisan auth-module:install
+```
+
+## 🎯 Multi-Tenant Desteği
 
 **Varsayılan olarak multi-tenant kapalıdır.** Multi-tenant kullanmak istiyorsanız:
 
@@ -151,119 +177,28 @@ class TenantHelper
 }
 ```
 
-### Multi-Tenant Olmadan Kullanım
+## 📚 Dokümantasyon
 
-Multi-tenant olmadan kullanmak için hiçbir şey yapmanıza gerek yok! Paket varsayılan olarak multi-tenant kapalı çalışır.
+- [Otomatik Kurulum](AUTO_INSTALL.md)
+- [Social Login Kullanımı](SOCIAL_LOGIN_KULLANIM.md) (eğer varsa)
+- [API Dokümantasyonu](API_DOKUMANTASYON.md) (eğer varsa)
 
-Sadece standart User modeliniz olması yeterli:
-```php
-class User extends Authenticatable
-{
-    use HasFactory, Notifiable;
-    // tenant_id field'ı olmasa bile çalışır
-}
-```
-
-### Route Özelleştirme
-
-Route'ları özelleştirmek için `.env` dosyanıza ekleyin:
-
-```env
-AUTH_MODULE_ROUTES_PREFIX=admin
-AUTH_MODULE_ROUTE_LOGIN=admin/login
-AUTH_MODULE_ROUTE_REGISTER=admin/register
-```
-
-### Redirect Özelleştirme
-
-Başarılı giriş/kayıt sonrası yönlendirmeleri özelleştirmek için:
-
-```env
-AUTH_MODULE_REDIRECT_AFTER_LOGIN=/dashboard
-AUTH_MODULE_REDIRECT_AFTER_REGISTER=/dashboard
-AUTH_MODULE_REDIRECT_AFTER_LOGOUT=/login
-```
-
-## View Özelleştirme
-
-View'ları özelleştirmek için:
-
-1. View'ları yayınlayın:
-```bash
-php artisan vendor:publish --tag=auth-module-views
-```
-
-2. `resources/views/vendor/auth-module` klasöründeki view'ları düzenleyin.
-
-## API Kullanımı
-
-Paket RESTful API endpoint'leri sağlar. Detaylı API dokümantasyonu için `API_DOKUMANTASYON.md` dosyasına bakın.
-
-### API Endpoint'leri
-
-- `POST /api/auth/login` - Kullanıcı girişi
-- `POST /api/auth/register` - Kullanıcı kaydı
-- `POST /api/auth/logout` - Kullanıcı çıkışı (Auth required)
-- `GET /api/auth/me` - Mevcut kullanıcı bilgileri (Auth required)
-- `POST /api/auth/password/request` - Şifre sıfırlama isteği
-- `POST /api/auth/password/reset` - Şifre sıfırlama
-
-### Sanctum Kurulumu
-
-API kullanımı için Laravel Sanctum gereklidir:
-
-```bash
-composer require laravel/sanctum
-php artisan vendor:publish --provider="Laravel\Sanctum\SanctumServiceProvider"
-php artisan migrate
-```
-
-### User Model Güncellemesi
-
-User modelinize `HasApiTokens` trait'ini ekleyin:
-
-```php
-use Laravel\Sanctum\HasApiTokens;
-
-class User extends Authenticatable
-{
-    use HasApiTokens, HasFactory, Notifiable;
-    // ...
-}
-```
-
-### CORS Yapılandırması
-
-Next.js veya diğer frontend'lerden API'ye erişim için CORS ayarlarını yapın:
-
-```php
-// config/cors.php
-'allowed_origins' => [
-    'http://localhost:3000',
-    'https://your-nextjs-domain.com',
-],
-```
-
-## Gereksinimler
+## 📝 Gereksinimler
 
 - PHP >= 8.2
 - Laravel >= 12.0
 - Laravel Sanctum >= 4.0 (Sadece API kullanımı için - opsiyonel)
+- Laravel Socialite >= 5.0 (Sadece Social Login için - opsiyonel)
 
-## Multi-Tenant Olmadan Kullanım
-
-Paket varsayılan olarak **multi-tenant kapalı** çalışır. Hiçbir ek yapılandırma gerekmez!
-
-Detaylı bilgi için `MULTI_TENANT_OLMADAN.md` dosyasına bakın.
-
-## Lisans
+## 📝 Lisans
 
 MIT
 
-## Katkıda Bulunma
+## 👤 Yazar
+
+**Abdullah Zubeyir Yıldız**  
+GitHub: [@abdullahzubeyiryildiz](https://github.com/abdullahzubeyiryildiz)
+
+## 🤝 Katkıda Bulunma
 
 Pull request'ler memnuniyetle karşılanır. Büyük değişiklikler için lütfen önce bir issue açarak neyi değiştirmek istediğinizi tartışın.
-
-## Destek
-
-Sorularınız için issue açabilirsiniz.

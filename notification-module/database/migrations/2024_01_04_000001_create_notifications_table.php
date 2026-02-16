@@ -44,18 +44,28 @@ return new class extends Migration
             if (!Schema::hasColumn('notifications', 'expires_at')) {
                 $table->timestamp('expires_at')->nullable()->index()->after('read_at');
             }
-
-            // Indexes (eğer yoksa)
-            $sm = Schema::getConnection()->getDoctrineSchemaManager();
-            $indexesFound = $sm->listTableIndexes('notifications');
-
-            if (!isset($indexesFound['notifications_notifiable_type_notifiable_id_read_at_index'])) {
-                $table->index(['notifiable_type', 'notifiable_id', 'read_at']);
-            }
-            if (!isset($indexesFound['notifications_tenant_id_read_at_created_at_index'])) {
-                $table->index(['tenant_id', 'read_at', 'created_at']);
-            }
         });
+
+        // Indexes (eğer yoksa) - Laravel 12 uyumlu
+        try {
+            if (!Schema::hasIndex('notifications', 'notifications_notifiable_type_notifiable_id_read_at_index')) {
+                Schema::table('notifications', function (Blueprint $table) {
+                    $table->index(['notifiable_type', 'notifiable_id', 'read_at'], 'notifications_notifiable_type_notifiable_id_read_at_index');
+                });
+            }
+        } catch (\Exception $e) {
+            // Index zaten varsa veya başka bir hata varsa devam et
+        }
+
+        try {
+            if (!Schema::hasIndex('notifications', 'notifications_tenant_id_read_at_created_at_index')) {
+                Schema::table('notifications', function (Blueprint $table) {
+                    $table->index(['tenant_id', 'read_at', 'created_at'], 'notifications_tenant_id_read_at_created_at_index');
+                });
+            }
+        } catch (\Exception $e) {
+            // Index zaten varsa veya başka bir hata varsa devam et
+        }
     }
 
     /**

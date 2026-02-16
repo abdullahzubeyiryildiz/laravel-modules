@@ -15,10 +15,10 @@ class UserService
     public function create(array $data): User
     {
         DB::beginTransaction();
-        
+
         try {
             $userModel = config('user-management-module.user_model', User::class);
-            
+
             $user = $userModel::create([
                 'name' => $data['name'],
                 'email' => $data['email'],
@@ -29,7 +29,7 @@ class UserService
             ]);
 
             DB::commit();
-            
+
             return $user;
         } catch (\Exception $e) {
             DB::rollBack();
@@ -47,7 +47,7 @@ class UserService
     public function update(User $user, array $data): User
     {
         DB::beginTransaction();
-        
+
         try {
             $updateData = [
                 'name' => $data['name'],
@@ -64,7 +64,7 @@ class UserService
             $user->update($updateData);
 
             DB::commit();
-            
+
             return $user->fresh();
         } catch (\Exception $e) {
             DB::rollBack();
@@ -83,12 +83,12 @@ class UserService
     public function delete(User $user): bool
     {
         DB::beginTransaction();
-        
+
         try {
             $user->delete();
-            
+
             DB::commit();
-            
+
             return true;
         } catch (\Exception $e) {
             DB::rollBack();
@@ -119,15 +119,15 @@ class UserService
     {
         $userModel = config('user-management-module.user_model', User::class);
         $query = $userModel::where('email', $email);
-        
+
         if ($userId) {
             $query->where('id', '!=', $userId);
         }
-        
+
         if ($tenantId) {
             $query->where('tenant_id', $tenantId);
         }
-        
+
         return $query->count() === 0;
     }
 }

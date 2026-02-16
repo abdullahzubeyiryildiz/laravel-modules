@@ -17,6 +17,10 @@ class UserManagementModuleServiceProvider extends ServiceProvider
             __DIR__ . '/../../config/user-management-module.php',
             'user-management-module'
         );
+
+        // Load routes early in register() to ensure they're available
+        // This is important for route discovery and registration
+        $this->loadRoutesFrom(__DIR__ . '/../../routes/web.php');
     }
 
     /**
@@ -37,23 +41,52 @@ class UserManagementModuleServiceProvider extends ServiceProvider
             __DIR__ . '/../../resources/views' => resource_path('views/vendor/user-management-module'),
         ], 'user-management-module-views');
 
-        // Load routes
-        $this->loadRoutes();
+        // Publish routes
+        $this->publishes([
+            __DIR__ . '/../../routes/web.php' => base_path('routes/user-management-module.php'),
+        ], 'user-management-module-routes');
+
+        // Merge JSON translations to main lang directory
+        $this->mergeJsonTranslations();
     }
 
     /**
-     * Load module routes
+     * Modül JSON çevirilerini ana lang dizinine merge et
      */
-    protected function loadRoutes(): void
+    protected function mergeJsonTranslations(): void
     {
-        Route::middleware('auth')->prefix('admin/users')->name('admin.users.')->group(function () {
-            Route::get('/', [\Modules\UserManagementModule\Http\Controllers\Admin\UserController::class, 'index'])->name('index');
-            Route::post('/datatable', [\Modules\UserManagementModule\Http\Controllers\Admin\UserController::class, 'datatable'])->name('datatable');
-            Route::post('/', [\Modules\UserManagementModule\Http\Controllers\Admin\UserController::class, 'store'])->name('store');
-            Route::get('/{user}', [\Modules\UserManagementModule\Http\Controllers\Admin\UserController::class, 'show'])->name('show');
-            Route::put('/{user}', [\Modules\UserManagementModule\Http\Controllers\Admin\UserController::class, 'update'])->name('update');
-            Route::delete('/{user}', [\Modules\UserManagementModule\Http\Controllers\Admin\UserController::class, 'destroy'])->name('destroy');
-            Route::post('/{user}/toggle-status', [\Modules\UserManagementModule\Http\Controllers\Admin\UserController::class, 'toggleStatus'])->name('toggle-status');
-        });
+        $moduleLangPath = __DIR__ . '/../../lang';
+        $locales = ['tr', 'en'];
+
+        foreach ($locales as $locale) {
+            $moduleFile = $moduleLangPath . '/' . $locale . '.json';
+            $mainFile = lang_path($locale . '.json');
+
+            if (!file_exists($moduleFile)) {
+                continue;
+            }
+
+            // Modül çevirilerini oku
+            $moduleTranslations = json_decode(file_get_contents($moduleFile), true);
+            if (!is_array($moduleTranslations)) {
+                continue;
+            }
+
+            // Ana dosya varsa oku, yoksa boş array
+            $mainTranslations = [];
+            if (file_exists($mainFile)) {
+                $mainTranslations = json_decode(file_get_contents($mainFile), true);
+                if (!is_array($mainTranslations)) {
+                    $mainTranslations = [];
+                }
+            }
+
+            // Modül çevirilerini ana çevirilere merge et (modül çevirileri öncelikli)
+            $mergedTranslations = array_merge($mainTranslations, $moduleTranslations);
+
+            // Ana dosyayı güncelle
+            file_put_contents($mainFile, json_encode($mergedTranslations, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+        }
     }
+
 }

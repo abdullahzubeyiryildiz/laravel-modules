@@ -1,46 +1,44 @@
-@php
-    $addIcon = '<svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>';
-@endphp
-
-<x-ui.modal :isOpen="false" modalId="createUserModal">
+<x-ui.modal :isOpen="false" modalId="editUserModal">
     <div class="p-6 sm:p-8">
         <h3 class="mb-6 text-2xl font-semibold text-gray-800 dark:text-white">
-            {{ __('Add New User') }}
+            {{ __('Edit User') }}
         </h3>
 
-        <form id="createUserForm" onsubmit="submitCreateUser(event)">
+        <form id="editUserForm" onsubmit="submitEditUser(event)">
             @csrf
+            @method('PUT')
+            <input type="hidden" id="edit_user_id" name="user_id">
 
             <div class="space-y-5">
                 <!-- Name -->
                 <div>
-                    <label for="name" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                    <label for="edit_name" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                         {{ __('Full Name') }} <span class="text-red-500">*</span>
                     </label>
-                    <input type="text" name="name" id="name" required
+                    <input type="text" name="name" id="edit_name" required
                         class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
                         placeholder="{{ __('Full Name') }}">
-                    <p class="mt-1.5 text-xs text-red-600 hidden" id="name-error"></p>
+                    <p class="mt-1.5 text-xs text-red-600 hidden" id="edit_name-error"></p>
                 </div>
 
                 <!-- Email -->
                 <div>
-                    <label for="email" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                    <label for="edit_email" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                         {{ __('Email') }} <span class="text-red-500">*</span>
                     </label>
-                    <input type="email" name="email" id="email" required
+                    <input type="email" name="email" id="edit_email" required
                         class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
                         placeholder="{{ __('example@email.com') }}">
-                    <p class="mt-1.5 text-xs text-red-600 hidden" id="email-error"></p>
+                    <p class="mt-1.5 text-xs text-red-600 hidden" id="edit_email-error"></p>
                 </div>
 
-                <!-- Password -->
+                <!-- Password (Optional) -->
                 <div>
-                    <label for="password" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                        {{ __('Password') }} <span class="text-red-500">*</span>
+                    <label for="edit_password" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                        {{ __('Password') }} <span class="text-xs text-gray-500">({{ __('Leave blank to keep current password') }})</span>
                     </label>
                     <div x-data="{ showPassword: false }" class="relative">
-                        <input :type="showPassword ? 'text' : 'password'" name="password" id="password" required
+                        <input :type="showPassword ? 'text' : 'password'" name="password" id="edit_password"
                             class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 pl-4 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
                             placeholder="{{ __('At least 8 characters') }}">
                         <span @click="showPassword = !showPassword"
@@ -57,16 +55,16 @@
                             </svg>
                         </span>
                     </div>
-                    <p class="mt-1.5 text-xs text-red-600 hidden" id="password-error"></p>
+                    <p class="mt-1.5 text-xs text-red-600 hidden" id="edit_password-error"></p>
                 </div>
 
-                <!-- Password Confirmation -->
+                <!-- Password Confirmation (Optional) -->
                 <div>
-                    <label for="password_confirmation" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                        {{ __('Confirm Password') }} <span class="text-red-500">*</span>
+                    <label for="edit_password_confirmation" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                        {{ __('Confirm Password') }}
                     </label>
                     <div x-data="{ showPassword: false }" class="relative">
-                        <input :type="showPassword ? 'text' : 'password'" name="password_confirmation" id="password_confirmation" required
+                        <input :type="showPassword ? 'text' : 'password'" name="password_confirmation" id="edit_password_confirmation"
                             class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 pl-4 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
                             placeholder="{{ __('Enter password again') }}">
                         <span @click="showPassword = !showPassword"
@@ -83,18 +81,18 @@
                             </svg>
                         </span>
                     </div>
-                    <p class="mt-1.5 text-xs text-red-600 hidden" id="password_confirmation-error"></p>
+                    <p class="mt-1.5 text-xs text-red-600 hidden" id="edit_password_confirmation-error"></p>
                 </div>
 
                 <!-- Role and Active Status -->
                 <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
                     <!-- Role -->
                     <div>
-                        <label for="role" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                        <label for="edit_role" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                             {{ __('Role') }}
                         </label>
                         <div x-data="{ isOptionSelected: false }" class="relative z-20 bg-transparent">
-                            <select name="role" id="role"
+                            <select name="role" id="edit_role"
                                 class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent bg-none px-4 py-2.5 pr-11 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
                                 :class="isOptionSelected && 'text-gray-800 dark:text-white/90'" @change="isOptionSelected = true">
                                 <option value="user" class="text-gray-700 dark:bg-gray-900 dark:text-gray-400">{{ __('User') }}</option>
@@ -112,9 +110,9 @@
                     <!-- Is Active -->
                     <div class="flex items-end">
                         <div class="flex h-11 w-full items-center rounded-lg border border-gray-300 bg-gray-50 px-4 dark:border-gray-700 dark:bg-gray-700">
-                            <input type="checkbox" name="is_active" id="is_active" value="1" checked
+                            <input type="checkbox" name="is_active" id="edit_is_active" value="1"
                                 class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500">
-                            <label for="is_active" class="ml-3 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            <label for="edit_is_active" class="ml-3 block text-sm font-medium text-gray-700 dark:text-gray-300">
                                 {{ __('Active') }}
                             </label>
                         </div>
@@ -124,12 +122,12 @@
 
             <!-- Footer -->
             <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-                <x-ui.button size="md" variant="outline" type="button" onclick="window.closeCreateModal()">
+                <x-ui.button size="md" variant="outline" type="button" onclick="window.closeEditModal()">
                     {{ __('Cancel') }}
                 </x-ui.button>
-                <x-ui.button size="md" variant="primary" type="submit" id="submitBtn">
-                    <span id="submitBtnText">{{ __('Save') }}</span>
-                    <span id="submitBtnLoader" class="hidden">
+                <x-ui.button size="md" variant="primary" type="submit" id="editSubmitBtn">
+                    <span id="editSubmitBtnText">{{ __('Update') }}</span>
+                    <span id="editSubmitBtnLoader" class="hidden">
                         <svg class="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -142,14 +140,114 @@
 </x-ui.modal>
 
 <script>
-function submitCreateUser(event) {
+window.openEditModal = function(userId) {
+    // Kullanıcı bilgilerini yükle
+    fetch(`{{ route("admin.users.show", ":id") }}`.replace(':id', userId), {
+        method: 'GET',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.user) {
+            const user = data.user;
+            document.getElementById('edit_user_id').value = user.id;
+            document.getElementById('edit_name').value = user.name || '';
+            document.getElementById('edit_email').value = user.email || '';
+            document.getElementById('edit_role').value = user.role || 'user';
+            document.getElementById('edit_is_active').checked = user.is_active || false;
+
+            // Modal'ı aç - Alpine.js ile
+            const modal = document.getElementById('editUserModal');
+            if (modal) {
+                // Modal'ın x-data element'ini bul (modal'ın kendisi)
+                const modalElement = modal;
+
+                if (window.Alpine) {
+                    try {
+                        // Alpine.js'in $data metodunu kullan
+                        const modalData = Alpine.$data(modalElement);
+                        if (modalData) {
+                            modalData.open = true;
+                        } else {
+                            // Alternatif: x-show direktifini kullan
+                            modalElement.setAttribute('x-show', 'true');
+                            modalElement.removeAttribute('x-cloak');
+                        }
+                    } catch (e) {
+                        console.error('Alpine.js error:', e);
+                        // Fallback: manuel göster
+                        modal.style.display = 'flex';
+                        modal.classList.remove('hidden');
+                        document.body.style.overflow = 'hidden';
+                    }
+                } else {
+                    // Alpine.js yüklenmemişse manuel göster
+                    modal.style.display = 'flex';
+                    modal.classList.remove('hidden');
+                    document.body.style.overflow = 'hidden';
+                }
+            }
+        } else {
+            showNotification(data.message || @json(__('An error occurred.')), 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification(@json(__('An error occurred. Please try again.')), 'error');
+    });
+}
+
+window.closeEditModal = function() {
+    const modal = document.getElementById('editUserModal');
+    if (modal) {
+        const modalElement = modal;
+
+        if (window.Alpine) {
+            try {
+                const modalData = Alpine.$data(modalElement);
+                if (modalData) {
+                    modalData.open = false;
+                } else {
+                    modalElement.setAttribute('x-show', 'false');
+                    modalElement.setAttribute('x-cloak', '');
+                }
+            } catch (e) {
+                console.error('Alpine.js error:', e);
+                modal.style.display = 'none';
+                modal.classList.add('hidden');
+                document.body.style.overflow = 'unset';
+            }
+        } else {
+            modal.style.display = 'none';
+            modal.classList.add('hidden');
+            document.body.style.overflow = 'unset';
+        }
+
+        // Form'u temizle
+        const form = document.getElementById('editUserForm');
+        if (form) {
+            form.reset();
+            // Hata mesajlarını temizle
+            document.querySelectorAll('#editUserModal .text-red-600').forEach(el => {
+                el.classList.add('hidden');
+                el.textContent = '';
+            });
+        }
+    }
+}
+
+function submitEditUser(event) {
     event.preventDefault();
 
     const form = event.target;
     const formData = new FormData(form);
-    const submitBtn = document.getElementById('submitBtn');
-    const submitBtnText = document.getElementById('submitBtnText');
-    const submitBtnLoader = document.getElementById('submitBtnLoader');
+    const userId = document.getElementById('edit_user_id').value;
+    const submitBtn = document.getElementById('editSubmitBtn');
+    const submitBtnText = document.getElementById('editSubmitBtnText');
+    const submitBtnLoader = document.getElementById('editSubmitBtnLoader');
 
     // Loading state
     submitBtn.disabled = true;
@@ -157,16 +255,17 @@ function submitCreateUser(event) {
     submitBtnLoader.classList.remove('hidden');
 
     // Hata mesajlarını temizle
-    document.querySelectorAll('#createUserModal .text-red-600').forEach(el => {
+    document.querySelectorAll('#editUserModal .text-red-600').forEach(el => {
         el.classList.add('hidden');
         el.textContent = '';
     });
 
-    fetch('{{ route("admin.users.store") }}', {
+    fetch(`{{ route("admin.users.update", ":id") }}`.replace(':id', userId), {
         method: 'POST',
         headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-            'Accept': 'application/json'
+            'Accept': 'application/json',
+            'X-HTTP-Method-Override': 'PUT'
         },
         body: formData
     })
@@ -174,20 +273,20 @@ function submitCreateUser(event) {
     .then(data => {
         if (data.success) {
             // Başarılı
-            if (typeof window.closeCreateModal === 'function') {
-                window.closeCreateModal();
+            if (typeof window.closeEditModal === 'function') {
+                window.closeEditModal();
             }
             // Kullanıcıları yeniden yükle
             if (typeof loadUsers === 'function') {
                 loadUsers();
             }
             // Başarı mesajı göster
-            showNotification(@json(__('User created successfully.')), 'success');
+            showNotification(@json(__('User updated successfully.')), 'success');
         } else {
             // Hata mesajlarını göster
             if (data.errors) {
                 Object.keys(data.errors).forEach(key => {
-                    const errorEl = document.getElementById(key + '-error');
+                    const errorEl = document.getElementById('edit_' + key + '-error');
                     if (errorEl) {
                         errorEl.textContent = data.errors[key][0];
                         errorEl.classList.remove('hidden');
@@ -209,5 +308,4 @@ function submitCreateUser(event) {
         submitBtnLoader.classList.add('hidden');
     });
 }
-
 </script>

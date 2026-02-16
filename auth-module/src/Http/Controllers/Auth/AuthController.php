@@ -19,16 +19,10 @@ class AuthController extends Controller
             return redirect(config('auth-module.redirects.after_login', '/dashboard'));
         }
 
-        $viewPath = config('auth-module.views.login', 'pages.auth.signin');
-        // Eğer auth-module namespace'i kullanılıyorsa ve yüklü değilse, fallback kullan
-        if (str_starts_with($viewPath, 'auth-module::')) {
-            try {
-                if (!view()->exists($viewPath)) {
-                    $viewPath = 'pages.auth.signin';
-                }
-            } catch (\Exception $e) {
-                $viewPath = 'pages.auth.signin';
-            }
+        $viewPath = config('auth-module.views.login', 'auth-module::auth.login');
+        // Eğer view yoksa fallback kullan
+        if (!view()->exists($viewPath)) {
+            $viewPath = 'pages.auth.signin';
         }
         return view($viewPath, [
             'title' => 'Giriş Yap'
@@ -75,7 +69,7 @@ class AuthController extends Controller
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return back()
-                ->withErrors(['email' => 'E-posta veya şifre hatalı.'])
+                ->withErrors(['email' => __('The email or password is incorrect.')])
                 ->withInput($request->only('email'));
         }
 
@@ -120,12 +114,12 @@ class AuthController extends Controller
             'email' => 'required|email|max:255',
             'password' => 'required|string|min:' . config('auth-module.validation.password_min_length', 6) . '|confirmed',
         ], [
-            'name.required' => 'Ad soyad gereklidir.',
-            'email.required' => 'E-posta adresi gereklidir.',
-            'email.email' => 'Geçerli bir e-posta adresi giriniz.',
-            'password.required' => 'Şifre gereklidir.',
-            'password.min' => 'Şifre en az ' . config('auth-module.validation.password_min_length', 6) . ' karakter olmalıdır.',
-            'password.confirmed' => 'Şifreler eşleşmiyor.',
+            'name.required' => __('The name field is required.'),
+            'email.required' => __('The email field is required.'),
+            'email.email' => __('The email must be a valid email address.'),
+            'password.required' => __('The password field is required.'),
+            'password.min' => __('The password must be at least :min characters.', ['min' => config('auth-module.validation.password_min_length', 6)]),
+            'password.confirmed' => __('The password confirmation does not match.'),
         ]);
 
         if ($validator->fails()) {
@@ -153,7 +147,7 @@ class AuthController extends Controller
                         $userCount = $userModel::where('tenant_id', $tenantId)->count();
                         if ($userCount >= $tenant->max_users) {
                             return back()
-                                ->withErrors(['email' => 'Bu tenant için maksimum kullanıcı sayısına ulaşıldı.'])
+                                ->withErrors(['email' => __('Maximum user limit reached for this tenant.')])
                                 ->withInput($request->except('password', 'password_confirmation'));
                         }
                     }
@@ -165,7 +159,7 @@ class AuthController extends Controller
 
                     if ($existingUser) {
                         return back()
-                            ->withErrors(['email' => 'Bu e-posta adresi zaten kullanılıyor.'])
+                            ->withErrors(['email' => __('This email address is already in use.')])
                             ->withInput($request->except('password', 'password_confirmation'));
                     }
                 }
@@ -178,7 +172,7 @@ class AuthController extends Controller
             $existingUser = $userModel::where('email', $request->email)->first();
             if ($existingUser) {
                 return back()
-                    ->withErrors(['email' => 'Bu e-posta adresi zaten kullanılıyor.'])
+                    ->withErrors(['email' => __('This email address is already in use.')])
                     ->withInput($request->except('password', 'password_confirmation'));
             }
         }
@@ -206,7 +200,7 @@ class AuthController extends Controller
         $request->session()->regenerate();
 
         return redirect(config('auth-module.redirects.after_register', '/dashboard'))
-            ->with('success', 'Hesabınız başarıyla oluşturuldu!');
+            ->with('success', __('Your account has been successfully created!'));
     }
 
     /**
@@ -219,7 +213,7 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect(config('auth-module.redirects.after_logout', '/login'))
-            ->with('success', 'Başarıyla çıkış yaptınız.');
+            ->with('success', __('You have successfully logged out.'));
     }
 
     /**

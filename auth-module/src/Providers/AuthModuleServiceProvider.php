@@ -67,6 +67,17 @@ class AuthModuleServiceProvider extends ServiceProvider
         // Load views
         $this->loadViewsFrom(__DIR__ . '/../../resources/views', 'auth-module');
 
+        // Load translations (PHP array translations)
+        $this->loadTranslationsFrom(__DIR__ . '/../../lang', 'auth-module');
+
+        // Merge JSON translations to main lang directory
+        $this->mergeJsonTranslations();
+
+        // Publish translations
+        $this->publishes([
+            __DIR__ . '/../../lang' => lang_path('vendor/auth-module'),
+        ], 'auth-module-lang');
+
         // Social auth config'i services.php'ye merge et
         $this->configureSocialProviders();
 
@@ -175,7 +186,7 @@ class AuthModuleServiceProvider extends ServiceProvider
         Route::middleware(config('auth-module.routes.middleware.auth', ['web', 'auth']))
             ->prefix(config('auth-module.routes.prefix', ''))
             ->group(function () {
-                Route::post(
+                Route::match(['get', 'post'],
                     config('auth-module.routes.logout', 'logout'),
                     [\Modules\AuthModule\Http\Controllers\Auth\AuthController::class, 'logout']
                 )->name('logout');
@@ -283,6 +294,48 @@ class AuthModuleServiceProvider extends ServiceProvider
                     [\Modules\AuthModule\Http\Controllers\Api\SocialAuthApiController::class, 'disconnect']
                 )                ->name('api.social.disconnect');
             });
+    }
+
+    /**
+     * JSON çevirilerini ana lang klasörüne merge et
+     */
+    protected function mergeJsonTranslations(): void
+    {
+        $moduleLangPath = __DIR__ . '/../../lang';
+        $locales = ['tr', 'en'];
+
+        foreach ($locales as $locale) {
+            $moduleFile = $moduleLangPath . '/' . $locale . '.json';
+            $mainFile = lang_path($locale . '.json');
+
+            if (!file_exists($moduleFile)) {
+                continue;
+            }
+
+            // Modül çevirilerini oku
+            $moduleTranslations = json_decode(file_get_contents($moduleFile), true);
+            if (!is_array($moduleTranslations)) {
+                continue;
+            }
+
+            // Ana dosya varsa oku, yoksa boş array
+            $mainTranslations = [];
+            if (file_exists($mainFile)) {
+                $mainTranslations = json_decode(file_get_contents($mainFile), true);
+                if (!is_array($mainTranslations)) {
+                    $mainTranslations = [];
+                }
+            }
+
+            // Modül çevirilerini ana çevirilere merge et (modül çevirileri öncelikli)
+            $mergedTranslations = array_merge($mainTranslations, $moduleTranslations);
+
+            // Dosyayı kaydet
+            file_put_contents(
+                $mainFile,
+                json_encode($mergedTranslations, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n"
+            );
+        }
     }
 
     /**

@@ -27,7 +27,7 @@ class AuthApiController extends Controller
         if ($validator->fails()) {
             return $this->response(
                 null,
-                'Validation failed',
+                __('Validation failed'),
                 422,
                 $validator->errors()
             );
@@ -53,7 +53,7 @@ class AuthApiController extends Controller
         if (!$user || !Hash::check($request->password, $user->password)) {
             return $this->response(
                 null,
-                'E-posta veya şifre hatalı.',
+                __('The email or password is incorrect.'),
                 401
             );
         }
@@ -76,7 +76,7 @@ class AuthApiController extends Controller
             ],
             'token' => $token,
             'token_type' => 'Bearer',
-        ], 'Giriş başarılı', 200);
+        ], __('Login successful'), 200);
     }
 
     /**
@@ -93,7 +93,7 @@ class AuthApiController extends Controller
         if ($validator->fails()) {
             return $this->response(
                 null,
-                'Validation failed',
+                __('Validation failed'),
                 422,
                 $validator->errors()
             );
@@ -119,7 +119,7 @@ class AuthApiController extends Controller
                         if ($userCount >= $tenant->max_users) {
                             return $this->response(
                                 null,
-                                'Bu tenant için maksimum kullanıcı sayısına ulaşıldı.',
+                                __('Maximum user limit reached for this tenant.'),
                                 403
                             );
                         }
@@ -133,9 +133,9 @@ class AuthApiController extends Controller
                     if ($existingUser) {
                         return $this->response(
                             null,
-                            'Bu e-posta adresi zaten kullanılıyor.',
+                            __('This email address is already in use.'),
                             409,
-                            ['email' => ['Bu e-posta adresi zaten kayıtlı.']]
+                            ['email' => [__('This email address is already in use.')]]
                         );
                     }
                 }
@@ -149,9 +149,9 @@ class AuthApiController extends Controller
             if ($existingUser) {
                 return $this->response(
                     null,
-                    'Bu e-posta adresi zaten kullanılıyor.',
+                    __('This email address is already in use.'),
                     409,
-                    ['email' => ['Bu e-posta adresi zaten kayıtlı.']]
+                    ['email' => [__('This email address is already in use.')]]
                 );
             }
         }
@@ -191,7 +191,7 @@ class AuthApiController extends Controller
             ],
             'token' => $token,
             'token_type' => 'Bearer',
-        ], 'Kayıt başarılı', 201);
+        ], __('Registration successful'), 201);
     }
 
     /**
@@ -206,7 +206,7 @@ class AuthApiController extends Controller
 
         return $this->response(
             null,
-            'Başarıyla çıkış yaptınız.',
+            __('You have successfully logged out.'),
             200
         );
     }
@@ -223,7 +223,7 @@ class AuthApiController extends Controller
                 'email' => $request->user()->email,
                 'role' => $request->user()->role,
             ],
-        ], 'Kullanıcı bilgileri', 200);
+        ], __('User information'), 200);
     }
 
     /**
@@ -238,7 +238,7 @@ class AuthApiController extends Controller
         if ($validator->fails()) {
             return $this->response(
                 null,
-                'Validation failed',
+                __('Validation failed'),
                 422,
                 $validator->errors()
             );
@@ -264,7 +264,7 @@ class AuthApiController extends Controller
             // Güvenlik için kullanıcı bulunamadığında da başarı mesajı döndür
             return $this->response(
                 null,
-                'Eğer bu e-posta adresi kayıtlıysa, şifre sıfırlama linki gönderildi.',
+                __('If this email address is registered, a password reset link has been sent.'),
                 200
             );
         }
@@ -289,7 +289,7 @@ class AuthApiController extends Controller
         return $this->response([
             'reset_url' => $resetUrl,
             'token' => $token, // Development için - production'da kaldırılmalı
-        ], 'Eğer bu e-posta adresi kayıtlıysa, şifre sıfırlama linki gönderildi.', 200);
+        ], __('If this email address is registered, a password reset link has been sent.'), 200);
     }
 
     /**
@@ -306,7 +306,7 @@ class AuthApiController extends Controller
         if ($validator->fails()) {
             return $this->response(
                 null,
-                'Validation failed',
+                __('Validation failed'),
                 422,
                 $validator->errors()
             );
@@ -320,7 +320,7 @@ class AuthApiController extends Controller
         if (!$passwordReset || !Hash::check($request->token, $passwordReset->token)) {
             return $this->response(
                 null,
-                'Geçersiz veya süresi dolmuş token.',
+                __('Invalid or expired token.'),
                 400
             );
         }
@@ -330,7 +330,7 @@ class AuthApiController extends Controller
             DB::table('password_reset_tokens')->where('email', $request->email)->delete();
             return $this->response(
                 null,
-                'Token süresi dolmuş. Lütfen yeni bir şifre sıfırlama isteği gönderin.',
+                __('Token has expired. Please request a new password reset.'),
                 400
             );
         }
@@ -355,7 +355,7 @@ class AuthApiController extends Controller
         if (!$user) {
             return $this->response(
                 null,
-                'Kullanıcı bulunamadı.',
+                __('User not found.'),
                 404
             );
         }
@@ -369,7 +369,7 @@ class AuthApiController extends Controller
 
         return $this->response(
             null,
-            'Şifreniz başarıyla sıfırlandı.',
+            __('Your password has been successfully reset. You can now log in.'),
             200
         );
     }

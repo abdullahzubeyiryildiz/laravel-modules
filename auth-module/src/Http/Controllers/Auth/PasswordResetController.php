@@ -23,7 +23,7 @@ class PasswordResetController extends Controller
             $viewPath = 'pages.auth.forgot-password'; // Varsayılan view path
         }
         return view($viewPath, [
-            'title' => 'Şifremi Unuttum'
+            'title' => __('Forgot Password')
         ]);
     }
 
@@ -35,8 +35,8 @@ class PasswordResetController extends Controller
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
         ], [
-            'email.required' => 'E-posta adresi gereklidir.',
-            'email.email' => 'Geçerli bir e-posta adresi giriniz.',
+            'email.required' => __('The email field is required.'),
+            'email.email' => __('The email must be a valid email address.'),
         ]);
 
         if ($validator->fails()) {
@@ -63,7 +63,7 @@ class PasswordResetController extends Controller
 
         if (!$user) {
             // Güvenlik için kullanıcı bulunamadığında da başarı mesajı göster
-            return back()->with('status', 'Eğer bu e-posta adresi kayıtlıysa, şifre sıfırlama linki gönderildi.');
+            return back()->with('status', __('If this email address is registered, a password reset link has been sent.'));
         }
 
         // Password reset token oluştur
@@ -97,7 +97,7 @@ class PasswordResetController extends Controller
             $viewPath = 'pages.auth.reset-password'; // Varsayılan view path
         }
         return view($viewPath, [
-            'title' => 'Şifre Sıfırla',
+            'title' => __('Reset Password'),
             'token' => $token,
             'email' => $request->email,
         ]);
@@ -113,12 +113,12 @@ class PasswordResetController extends Controller
             'email' => 'required|email',
             'password' => 'required|string|min:' . config('auth-module.validation.password_min_length', 6) . '|confirmed',
         ], [
-            'token.required' => 'Token gereklidir.',
-            'email.required' => 'E-posta adresi gereklidir.',
-            'email.email' => 'Geçerli bir e-posta adresi giriniz.',
-            'password.required' => 'Şifre gereklidir.',
-            'password.min' => 'Şifre en az ' . config('auth-module.validation.password_min_length', 6) . ' karakter olmalıdır.',
-            'password.confirmed' => 'Şifreler eşleşmiyor.',
+            'token.required' => __('The token field is required.'),
+            'email.required' => __('The email field is required.'),
+            'email.email' => __('The email must be a valid email address.'),
+            'password.required' => __('The password field is required.'),
+            'password.min' => __('The password must be at least :min characters.', ['min' => config('auth-module.validation.password_min_length', 6)]),
+            'password.confirmed' => __('The password confirmation does not match.'),
         ]);
 
         if ($validator->fails()) {
@@ -134,7 +134,7 @@ class PasswordResetController extends Controller
 
         if (!$passwordReset || !Hash::check($request->token, $passwordReset->token)) {
             return back()
-                ->withErrors(['email' => 'Geçersiz veya süresi dolmuş token.'])
+                ->withErrors(['email' => __('Invalid or expired token.')])
                 ->withInput($request->only('email'));
         }
 
@@ -142,7 +142,7 @@ class PasswordResetController extends Controller
         if (now()->diffInMinutes($passwordReset->created_at) > 60) {
             DB::table('password_reset_tokens')->where('email', $request->email)->delete();
             return back()
-                ->withErrors(['email' => 'Token süresi dolmuş. Lütfen yeni bir şifre sıfırlama isteği gönderin.'])
+                ->withErrors(['email' => __('Token has expired. Please request a new password reset.')])
                 ->withInput($request->only('email'));
         }
 
@@ -165,7 +165,7 @@ class PasswordResetController extends Controller
 
         if (!$user) {
             return back()
-                ->withErrors(['email' => 'Kullanıcı bulunamadı.'])
+                ->withErrors(['email' => __('User not found.')])
                 ->withInput($request->only('email'));
         }
 
@@ -177,6 +177,6 @@ class PasswordResetController extends Controller
         DB::table('password_reset_tokens')->where('email', $request->email)->delete();
 
         return redirect()->route('login')
-            ->with('success', 'Şifreniz başarıyla sıfırlandı. Giriş yapabilirsiniz.');
+            ->with('success', __('Your password has been successfully reset. You can now log in.'));
     }
 }

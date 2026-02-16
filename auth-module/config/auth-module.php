@@ -38,8 +38,8 @@ return [
     */
 
     'views' => [
-        'login' => env('AUTH_MODULE_VIEW_LOGIN', 'pages.auth.signin'),
-        'register' => env('AUTH_MODULE_VIEW_REGISTER', 'pages.auth.signup'),
+        'login' => env('AUTH_MODULE_VIEW_LOGIN', 'auth-module::auth.login'),
+        'register' => env('AUTH_MODULE_VIEW_REGISTER', 'auth-module::auth.register'),
         'password' => [
             'request' => env('AUTH_MODULE_VIEW_PASSWORD_REQUEST', 'auth-module::auth.passwords.email'),
             'reset' => env('AUTH_MODULE_VIEW_PASSWORD_RESET', 'auth-module::auth.passwords.reset'),

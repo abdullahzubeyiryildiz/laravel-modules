@@ -27,7 +27,7 @@ class SocialAuthApiController extends Controller
         if (!$this->isProviderEnabled($provider)) {
             return $this->response(
                 null,
-                'Bu giriş yöntemi aktif değil.',
+                __('This login method is not enabled.'),
                 404
             );
         }
@@ -36,7 +36,7 @@ class SocialAuthApiController extends Controller
         if (!class_exists('Laravel\Socialite\Facades\Socialite')) {
             return $this->response(
                 null,
-                'Laravel Socialite paketi yüklü değil. Lütfen "composer require laravel/socialite" komutunu çalıştırın.',
+                __('Laravel Socialite package is not installed. Please run "composer require laravel/socialite".'),
                 500
             );
         }
@@ -46,11 +46,11 @@ class SocialAuthApiController extends Controller
 
             return $this->response([
                 'redirect_url' => $url,
-            ], 'Yönlendirme URL\'i oluşturuldu.', 200);
+            ], __('Redirect URL created.'), 200);
         } catch (\Exception $e) {
             return $this->response(
                 null,
-                'Yönlendirme URL\'i oluşturulamadı: ' . $e->getMessage(),
+                __('Failed to create redirect URL: :error', ['error' => $e->getMessage()]),
                 500
             );
         }
@@ -65,7 +65,7 @@ class SocialAuthApiController extends Controller
         if (!$this->isProviderEnabled($provider)) {
             return $this->response(
                 null,
-                'Bu giriş yöntemi aktif değil.',
+                __('This login method is not enabled.'),
                 404
             );
         }
@@ -75,7 +75,7 @@ class SocialAuthApiController extends Controller
             if ($request->has('error')) {
                 return $this->response(
                     null,
-                    'Giriş iptal edildi veya bir hata oluştu.',
+                    __('Login was cancelled or an error occurred.'),
                     400
                 );
             }
@@ -84,7 +84,7 @@ class SocialAuthApiController extends Controller
             if (!class_exists('Laravel\Socialite\Facades\Socialite')) {
                 return $this->response(
                     null,
-                    'Laravel Socialite paketi yüklü değil.',
+                    __('Laravel Socialite package is not installed.'),
                     500
                 );
             }
@@ -107,12 +107,12 @@ class SocialAuthApiController extends Controller
                 ],
                 'token' => $token,
                 'token_type' => 'Bearer',
-            ], 'Başarıyla giriş yaptınız!', 200);
+            ], __('You have successfully logged in!'), 200);
         } catch (\Exception $e) {
             \Log::error('Social login hatası: ' . $e->getMessage());
             return $this->response(
                 null,
-                'Giriş yapılırken bir hata oluştu: ' . $e->getMessage(),
+                __('An error occurred during login: :error', ['error' => $e->getMessage()]),
                 500
             );
         }
@@ -137,7 +137,7 @@ class SocialAuthApiController extends Controller
                     'connected_at' => $account->created_at,
                 ];
             }),
-        ], 'Bağlı hesaplar listelendi.', 200);
+        ], __('Connected accounts listed.'), 200);
     }
 
     /**
@@ -154,7 +154,7 @@ class SocialAuthApiController extends Controller
         if ($socialAccounts->count() <= 1 && !$hasPassword) {
             return $this->response(
                 null,
-                'En az bir giriş yöntemi olmalıdır. Şifre belirleyin veya başka bir hesap bağlayın.',
+                __('At least one login method is required. Set a password or connect another account.'),
                 400
             );
         }
@@ -164,14 +164,14 @@ class SocialAuthApiController extends Controller
         if ($disconnected) {
             return $this->response(
                 null,
-                'Hesap bağlantısı kesildi.',
+                __('Account disconnected.'),
                 200
             );
         }
 
         return $this->response(
             null,
-            'Hesap bulunamadı.',
+            __('Account not found.'),
             404
         );
     }

@@ -40,7 +40,7 @@ class ProfileApiController extends Controller
                 'created_at' => $user->created_at,
                 'updated_at' => $user->updated_at,
             ],
-        ], 'Profil bilgileri', 200);
+        ], __('Profile information'), 200);
     }
 
     /**
@@ -60,7 +60,7 @@ class ProfileApiController extends Controller
         if ($validator->fails()) {
             return $this->response(
                 null,
-                'Validation failed',
+                __('Validation failed'),
                 422,
                 $validator->errors()
             );
@@ -99,7 +99,7 @@ class ProfileApiController extends Controller
                 'bio' => $user->bio ?? null,
                 'role' => $user->role ?? null,
             ],
-        ], 'Profil başarıyla güncellendi.', 200);
+        ], __('Profile updated successfully.'), 200);
     }
 
     /**
@@ -115,7 +115,7 @@ class ProfileApiController extends Controller
         if ($validator->fails()) {
             return $this->response(
                 null,
-                'Validation failed',
+                __('Validation failed'),
                 422,
                 $validator->errors()
             );
@@ -156,12 +156,12 @@ class ProfileApiController extends Controller
                 'avatar' => $file->path,
                 'avatar_url' => $file->is_private ? $file->getSignedUrl() : $file->getPublicUrl(),
                 'file_id' => $file->id,
-            ], 'Profil resmi başarıyla güncellendi.', 200);
+            ], __('Profile picture updated successfully.'), 200);
 
         } catch (\Exception $e) {
             return $this->response(
                 null,
-                'Resim yükleme hatası: ' . $e->getMessage(),
+                __('Image upload error: :error', ['error' => $e->getMessage()]),
                 500
             );
         }
@@ -177,7 +177,7 @@ class ProfileApiController extends Controller
         if (!$user->avatar) {
             return $this->response(
                 null,
-                'Profil resmi bulunamadı.',
+                __('Profile picture not found.'),
                 404
             );
         }
@@ -197,14 +197,14 @@ class ProfileApiController extends Controller
 
             return $this->response(
                 null,
-                'Profil resmi başarıyla silindi.',
+                __('Profile picture deleted successfully.'),
                 200
             );
 
         } catch (\Exception $e) {
             return $this->response(
                 null,
-                'Resim silme hatası: ' . $e->getMessage(),
+                __('Image deletion error: :error', ['error' => $e->getMessage()]),
                 500
             );
         }
@@ -219,16 +219,16 @@ class ProfileApiController extends Controller
             'current_password' => 'required|string',
             'password' => 'required|string|min:' . config('auth-module.validation.password_min_length', 6) . '|confirmed',
         ], [
-            'current_password.required' => 'Mevcut şifre gereklidir.',
-            'password.required' => 'Yeni şifre gereklidir.',
-            'password.min' => 'Yeni şifre en az ' . config('auth-module.validation.password_min_length', 6) . ' karakter olmalıdır.',
-            'password.confirmed' => 'Şifreler eşleşmiyor.',
+            'current_password.required' => __('The current password field is required.'),
+            'password.required' => __('The new password field is required.'),
+            'password.min' => __('The new password must be at least :min characters.', ['min' => config('auth-module.validation.password_min_length', 6)]),
+            'password.confirmed' => __('The password confirmation does not match.'),
         ]);
 
         if ($validator->fails()) {
             return $this->response(
                 null,
-                'Validation failed',
+                __('Validation failed'),
                 422,
                 $validator->errors()
             );
@@ -240,9 +240,9 @@ class ProfileApiController extends Controller
         if (!Hash::check($request->current_password, $user->password)) {
             return $this->response(
                 null,
-                'Mevcut şifre hatalı.',
+                __('Current password is incorrect.'),
                 422,
-                ['current_password' => ['Mevcut şifre hatalı.']]
+                ['current_password' => [__('Current password is incorrect.')]]
             );
         }
 
@@ -252,7 +252,7 @@ class ProfileApiController extends Controller
 
         return $this->response(
             null,
-            'Şifreniz başarıyla değiştirildi.',
+            __('Your password has been successfully changed.'),
             200
         );
     }

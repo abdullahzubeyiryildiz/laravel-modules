@@ -2,6 +2,11 @@
 
 namespace Modules\AuthModule\Traits;
 
+/**
+ * Tenant ilişkisi ve rol desteği.
+ * Rol kontrolleri role-permission-module kullanılır (yüklüyse).
+ * Modül yoksa users.role kolonu fallback olarak kullanılır.
+ */
 trait HasTenantAndRole
 {
     /**
@@ -23,8 +28,7 @@ trait HasTenantAndRole
      */
     public function isAdmin(): bool
     {
-        $role = $this->getUserRole();
-        return $role === 'admin';
+        return $this->getRoleChecker()->isAdmin($this);
     }
 
     /**
@@ -39,38 +43,21 @@ trait HasTenantAndRole
     /**
      * Kullanıcının rolünü al
      */
-    protected function getUserRole(): ?string
+    public function getUserRole(): ?string
     {
-        // User model'inde role attribute'u varsa (en yaygın kullanım)
-        if (isset($this->role)) {
-            return $this->role;
+        return $this->getRoleChecker()->getPrimaryRole($this);
+    }
+
+    /**
+     * Rol/izin kontrol servisini al (role-permission-module veya fallback)
+     */
+    protected function getRoleChecker()
+    {
+        if (config('role-permission-module.enabled', false)
+            && class_exists(\Modules\RolePermissionModule\Services\RolePermissionService::class)) {
+            return app(\Modules\RolePermissionModule\Services\RolePermissionService::class);
         }
 
-        // User model'inde getRole() metodu varsa
-        if (method_exists($this, 'getRole')) {
-            return $this->getRole();
-        }
-
-        // User model'inde role() relationship'i varsa
-        if (method_exists($this, 'role')) {
-            try {
-                $role = $this->role();
-                if ($role) {
-                    return is_object($role) ? ($role->name ?? $role->slug ?? null) : $role;
-                }
-            } catch (\Exception $e) {
-                // Relationship yoksa veya hata varsa devam et
-            }
-        }
-
-        // User model'inde toArray() ile kontrol et
-        if (method_exists($this, 'toArray')) {
-            $attributes = $this->toArray();
-            if (isset($attributes['role'])) {
-                return $attributes['role'];
-            }
-        }
-
-        return null;
+        return app(\Modules\AuthModule\Services\RoleFallbackService::class);
     }
 }

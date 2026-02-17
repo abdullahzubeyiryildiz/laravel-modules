@@ -4,7 +4,7 @@ namespace Modules\AuthModule\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Route;
-use Modules\AuthModule\Services\RoleService;
+use Modules\AuthModule\Services\RoleFallbackService;
 use Modules\AuthModule\Services\SocialAuthService;
 
 class AuthModuleServiceProvider extends ServiceProvider
@@ -20,20 +20,13 @@ class AuthModuleServiceProvider extends ServiceProvider
             'auth-module'
         );
 
-        // Interface binding'leri
-        $this->app->singleton(
-            \Modules\AuthModule\Contracts\RoleServiceInterface::class,
-            RoleService::class
-        );
-
         $this->app->singleton(
             \Modules\AuthModule\Contracts\SocialAuthServiceInterface::class,
             SocialAuthService::class
         );
 
-        // Service'leri singleton olarak kaydet
-        $this->app->singleton(RoleService::class, function ($app) {
-            return new RoleService();
+        $this->app->singleton(RoleFallbackService::class, function ($app) {
+            return new RoleFallbackService();
         });
 
         $this->app->singleton(SocialAuthService::class, function ($app) {

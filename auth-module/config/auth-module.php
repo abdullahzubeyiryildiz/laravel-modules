@@ -129,35 +129,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Permissions Configuration
+    | Permissions Configuration (Fallback)
     |--------------------------------------------------------------------------
     |
-    | Rol bazlı yetki tanımları.
+    | role-permission-module yüklü değilse kullanılan basit yetki tanımları.
+    | Dinamik roller için role-permission-module kullanın.
     |
     */
 
     'permissions' => [
-        'admin' => ['*'], // Admin tüm yetkilere sahip
-        'manager' => [
-            'users.view',
-            'users.edit',
-            'users.delete',
-            'content.view',
-            'content.edit',
-        ],
-        'moderator' => [
-            'content.view',
-            'content.edit',
-            'comments.moderate',
-        ],
-        'editor' => [
-            'content.view',
-            'content.edit',
-        ],
-        'user' => [
-            'profile.view',
-            'profile.edit',
-        ],
+        'admin' => ['*'],
+        'manager' => ['users.view', 'users.edit', 'users.delete', 'content.view', 'content.edit'],
+        'user' => ['profile.view', 'profile.edit'],
     ],
 
     /*

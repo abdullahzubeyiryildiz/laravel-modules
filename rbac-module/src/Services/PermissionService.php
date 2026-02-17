@@ -2,11 +2,13 @@
 
 namespace Modules\RbacModule\Services;
 
-use Modules\RbacModule\Models\Role;
-use Modules\RbacModule\Models\Permission;
 use Modules\RbacModule\Models\TenantUser;
 use Illuminate\Contracts\Auth\Authenticatable;
 
+/**
+ * İzin servisi - role-permission-module kullanır (yüklüyse).
+ * role-permission-module yoksa tenant_users üzerinden legacy kontrol yapar.
+ */
 class PermissionService
 {
     /**
@@ -18,12 +20,15 @@ class PermissionService
             return false;
         }
 
-        // Admin her şeyi yapabilir
-        if ($this->isAdmin($user)) {
-            return true;
+        // role-permission-module varsa onu kullan
+        if (config('role-permission-module.enabled', false)
+            && class_exists(\Modules\RolePermissionModule\Services\RolePermissionService::class)) {
+            $tenantId = $this->getTenantId();
+            return app(\Modules\RolePermissionModule\Services\RolePermissionService::class)
+                ->hasPermission($user, $permissionSlug, $tenantId);
         }
 
-        // TenantUser üzerinden kontrol et
+        // Legacy: TenantUser üzerinden kontrol
         $tenantUser = $this->getTenantUser($user);
         if ($tenantUser && $tenantUser->role) {
             return $tenantUser->role->hasPermission($permissionSlug);
@@ -39,6 +44,13 @@ class PermissionService
     {
         if (!$user) {
             return false;
+        }
+
+        if (config('role-permission-module.enabled', false)
+            && class_exists(\Modules\RolePermissionModule\Services\RolePermissionService::class)) {
+            $tenantId = $this->getTenantId();
+            return app(\Modules\RolePermissionModule\Services\RolePermissionService::class)
+                ->hasRole($user, $roles, $tenantId);
         }
 
         $tenantUser = $this->getTenantUser($user);
@@ -62,7 +74,7 @@ class PermissionService
     }
 
     /**
-     * TenantUser kaydını al
+     * TenantUser kaydını al (legacy)
      */
     protected function getTenantUser(Authenticatable $user): ?TenantUser
     {
@@ -94,69 +106,56 @@ class PermissionService
 
     /**
      * Varsayılan rolleri ve permission'ları oluştur
+     * role-permission-module varsa onun servisini kullanır
      */
     public function seedDefaultRolesAndPermissions(?int $tenantId = null): void
     {
         $tenantId = $tenantId ?? $this->getTenantId();
 
-        // Varsayılan roller
+        if (config('role-permission-module.enabled', false)
+            && class_exists(\Modules\RolePermissionModule\Services\RolePermissionService::class)) {
+            app(\Modules\RolePermissionModule\Services\RolePermissionService::class)->seedDefaults($tenantId);
+            return;
+        }
+
+        // Legacy - RbacModule modelleri ile (Role, Permission)
+        if (!class_exists(\Modules\RbacModule\Models\Role::class)) {
+            return;
+        }
+
+        $roleClass = \Modules\RbacModule\Models\Role::class;
+        $permissionClass = \Modules\RbacModule\Models\Permission::class;
+
         $roles = [
-            [
-                'name' => 'Admin',
-                'slug' => 'admin',
-                'display_name' => 'Yönetici',
-                'level' => 100,
-                'is_system' => true,
-            ],
-            [
-                'name' => 'Manager',
-                'slug' => 'manager',
-                'display_name' => 'Yönetici',
-                'level' => 50,
-                'is_system' => true,
-            ],
-            [
-                'name' => 'User',
-                'slug' => 'user',
-                'display_name' => 'Kullanıcı',
-                'level' => 10,
-                'is_system' => true,
-            ],
+            ['name' => 'Admin', 'slug' => 'admin', 'display_name' => 'Yönetici', 'level' => 100, 'is_system' => true],
+            ['name' => 'Manager', 'slug' => 'manager', 'display_name' => 'Yönetici', 'level' => 50, 'is_system' => true],
+            ['name' => 'User', 'slug' => 'user', 'display_name' => 'Kullanıcı', 'level' => 10, 'is_system' => true],
         ];
 
-        // Varsayılan permission'lar
         $permissions = [
-            // Users
             ['name' => 'Users View', 'slug' => 'users.view', 'group' => 'users', 'display_name' => 'Kullanıcıları Görüntüle'],
             ['name' => 'Users Create', 'slug' => 'users.create', 'group' => 'users', 'display_name' => 'Kullanıcı Oluştur'],
             ['name' => 'Users Edit', 'slug' => 'users.edit', 'group' => 'users', 'display_name' => 'Kullanıcı Düzenle'],
             ['name' => 'Users Delete', 'slug' => 'users.delete', 'group' => 'users', 'display_name' => 'Kullanıcı Sil'],
-            
-            // Files
-            ['name' => 'Files View', 'slug' => 'files.view', 'group' => 'files', 'display_name' => 'Dosyaları Görüntüle'],
-            ['name' => 'Files Upload', 'slug' => 'files.upload', 'group' => 'files', 'display_name' => 'Dosya Yükle'],
-            ['name' => 'Files Delete', 'slug' => 'files.delete', 'group' => 'files', 'display_name' => 'Dosya Sil'],
         ];
 
-        foreach ($roles as $roleData) {
-            $role = Role::firstOrCreate(
-                ['tenant_id' => $tenantId, 'slug' => $roleData['slug']],
-                array_merge($roleData, ['tenant_id' => $tenantId])
+        foreach ($roles as $data) {
+            $roleClass::firstOrCreate(
+                ['tenant_id' => $tenantId, 'slug' => $data['slug']],
+                array_merge($data, ['tenant_id' => $tenantId])
             );
         }
 
-        foreach ($permissions as $permissionData) {
-            $permission = Permission::firstOrCreate(
-                ['tenant_id' => $tenantId, 'slug' => $permissionData['slug']],
-                array_merge($permissionData, ['tenant_id' => $tenantId, 'is_system' => true])
+        foreach ($permissions as $data) {
+            $permissionClass::firstOrCreate(
+                ['tenant_id' => $tenantId, 'slug' => $data['slug']],
+                array_merge($data, ['tenant_id' => $tenantId, 'is_system' => true])
             );
         }
 
-        // Admin rolüne tüm permission'ları ata
-        $adminRole = Role::where('tenant_id', $tenantId)->where('slug', 'admin')->first();
+        $adminRole = $roleClass::where('tenant_id', $tenantId)->where('slug', 'admin')->first();
         if ($adminRole) {
-            $allPermissions = Permission::where('tenant_id', $tenantId)->pluck('id');
-            $adminRole->permissions()->sync($allPermissions);
+            $adminRole->permissions()->sync($permissionClass::where('tenant_id', $tenantId)->pluck('id'));
         }
     }
 }

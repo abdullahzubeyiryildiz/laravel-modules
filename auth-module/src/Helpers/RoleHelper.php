@@ -3,64 +3,56 @@
 namespace Modules\AuthModule\Helpers;
 
 use Illuminate\Contracts\Auth\Authenticatable;
-use Modules\AuthModule\Services\RoleService;
 
 /**
- * Role helper functions
+ * Rol yardımcı fonksiyonları.
+ * role-permission-module yüklüyse onu kullanır, değilse users.role kolonuna fallback yapar.
  */
 class RoleHelper
 {
-    /**
-     * Kullanıcının rolünü kontrol et
-     */
+    protected static function getService()
+    {
+        if (config('role-permission-module.enabled', false)
+            && class_exists(\Modules\RolePermissionModule\Services\RolePermissionService::class)) {
+            return app(\Modules\RolePermissionModule\Services\RolePermissionService::class);
+        }
+        return app(\Modules\AuthModule\Services\RoleFallbackService::class);
+    }
+
     public static function hasRole(?Authenticatable $user, string|array $roles): bool
     {
-        $roleService = app(RoleService::class);
-        return $roleService->hasRole($user, $roles);
+        return static::getService()->hasRole($user, $roles);
     }
 
-    /**
-     * Kullanıcı admin mi?
-     */
     public static function isAdmin(?Authenticatable $user): bool
     {
-        $roleService = app(RoleService::class);
-        return $roleService->isAdmin($user);
+        return static::getService()->isAdmin($user);
     }
 
-    /**
-     * Kullanıcı manager mi?
-     */
     public static function isManager(?Authenticatable $user): bool
     {
-        $roleService = app(RoleService::class);
-        return $roleService->isManager($user);
+        $role = static::getRole($user);
+        return in_array($role, ['admin', 'manager']);
     }
 
-    /**
-     * Kullanıcının rolünü al
-     */
     public static function getRole(?Authenticatable $user): ?string
     {
-        $roleService = app(RoleService::class);
-        return $roleService->getUserRole($user);
+        return static::getService()->getPrimaryRole($user);
     }
 
-    /**
-     * Kullanıcının rolünü formatla
-     */
     public static function getFormattedRole(?Authenticatable $user): string
     {
-        $roleService = app(RoleService::class);
-        return $roleService->getFormattedRole($user);
+        $role = static::getRole($user);
+        if (!$role) {
+            return 'Kullanıcı';
+        }
+        $labels = ['admin' => 'Yönetici', 'manager' => 'Yönetici', 'user' => 'Kullanıcı', 'moderator' => 'Moderatör', 'editor' => 'Editör'];
+        return $labels[strtolower($role)] ?? ucfirst($role);
     }
 
-    /**
-     * Yetki kontrolü
-     */
     public static function can(?Authenticatable $user, string $permission): bool
     {
-        $roleService = app(RoleService::class);
-        return $roleService->can($user, $permission);
+        $service = static::getService();
+        return method_exists($service, 'hasPermission') ? $service->hasPermission($user, $permission) : false;
     }
 }

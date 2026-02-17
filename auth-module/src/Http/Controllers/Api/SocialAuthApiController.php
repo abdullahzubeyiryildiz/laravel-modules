@@ -103,7 +103,7 @@ class SocialAuthApiController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
-                    'role' => $user->role ?? null,
+                    'role' => class_exists(\Modules\AuthModule\Helpers\RoleHelper::class) ? \Modules\AuthModule\Helpers\RoleHelper::getRole($user) : ($user->role ?? null),
                 ],
                 'token' => $token,
                 'token_type' => 'Bearer',

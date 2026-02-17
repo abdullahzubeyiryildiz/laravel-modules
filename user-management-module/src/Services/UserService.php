@@ -18,15 +18,20 @@ class UserService
 
         try {
             $userModel = config('user-management-module.user_model', User::class);
+            $role = $data['role'] ?? config('role-permission-module.default_role_slug', 'user');
+            $tenantId = $data['tenant_id'] ?? null;
 
             $user = $userModel::create([
                 'name' => $data['name'],
                 'email' => $data['email'],
                 'password' => Hash::make($data['password']),
-                'role' => $data['role'] ?? 'user',
                 'is_active' => $data['is_active'] ?? true,
-                'tenant_id' => $data['tenant_id'] ?? null,
+                'tenant_id' => $tenantId,
             ]);
+
+            if (config('role-permission-module.enabled', false) && class_exists(\Modules\RolePermissionModule\Services\RolePermissionService::class)) {
+                app(\Modules\RolePermissionModule\Services\RolePermissionService::class)->assignRole($user, $role, $tenantId);
+            }
 
             DB::commit();
 
@@ -49,19 +54,24 @@ class UserService
         DB::beginTransaction();
 
         try {
+            $role = $data['role'] ?? config('role-permission-module.default_role_slug', 'user');
+            $tenantId = $user->tenant_id;
+
             $updateData = [
                 'name' => $data['name'],
                 'email' => $data['email'],
-                'role' => $data['role'] ?? $user->role,
                 'is_active' => $data['is_active'] ?? $user->is_active,
             ];
 
-            // Şifre güncelleniyorsa
             if (!empty($data['password'])) {
                 $updateData['password'] = Hash::make($data['password']);
             }
 
             $user->update($updateData);
+
+            if (config('role-permission-module.enabled', false) && class_exists(\Modules\RolePermissionModule\Services\RolePermissionService::class) && isset($data['role'])) {
+                app(\Modules\RolePermissionModule\Services\RolePermissionService::class)->syncRoles($user, [$role], $tenantId);
+            }
 
             DB::commit();
 

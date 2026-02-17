@@ -1,0 +1,30 @@
+{
+    "name": "modules/role-permission-module",
+    "description": "Dynamic role and permission management module - can be used by auth-module, rbac-module and other packages.",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Abdullah Zubeyir Yıldız",
+            "email": "abdullahzubeyiryildiz@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "laravel/framework": "^12.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\RolePermissionModule\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Modules\\RolePermissionModule\\Providers\\RolePermissionModuleServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

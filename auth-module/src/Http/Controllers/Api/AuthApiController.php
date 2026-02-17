@@ -62,17 +62,19 @@ class AuthApiController extends Controller
         if (method_exists($user, 'createToken')) {
             $token = $user->createToken('auth-token')->plainTextToken;
         } else {
-            // Sanctum yüklü değilse manuel token oluştur
             $token = Str::random(80);
-            // Token'ı veritabanına kaydet (custom implementation gerekebilir)
         }
+
+        $role = class_exists(\Modules\AuthModule\Helpers\RoleHelper::class)
+            ? \Modules\AuthModule\Helpers\RoleHelper::getRole($user)
+            : ($user->role ?? null);
 
         return $this->response([
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'role' => $user->role,
+                'role' => $role,
             ],
             'token' => $token,
             'token_type' => 'Bearer',
@@ -156,12 +158,12 @@ class AuthApiController extends Controller
             }
         }
 
-        // Kullanıcı oluştur
+        // Kullanıcı oluştur (rol user_roles ile atanacak)
+        $defaultRole = config('role-permission-module.default_role_slug', 'user');
         $userData = [
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => 'user',
             'is_active' => true,
             'email_verified_at' => now(),
         ];
@@ -171,6 +173,14 @@ class AuthApiController extends Controller
         }
 
         $user = $userModel::create($userData);
+
+        if (config('role-permission-module.enabled', false) && class_exists(\Modules\RolePermissionModule\Services\RolePermissionService::class)) {
+            try {
+                app(\Modules\RolePermissionModule\Services\RolePermissionService::class)->assignRole($user, $defaultRole, $tenantId);
+            } catch (\Exception $e) {
+                \Log::warning('Role assignment failed: ' . $e->getMessage());
+            }
+        }
 
         // Notification gönder (mail ve/veya SMS)
         $this->sendWelcomeNotification($user);
@@ -182,12 +192,16 @@ class AuthApiController extends Controller
             $token = Str::random(80);
         }
 
+        $role = class_exists(\Modules\AuthModule\Helpers\RoleHelper::class)
+            ? \Modules\AuthModule\Helpers\RoleHelper::getRole($user)
+            : ($user->role ?? null);
+
         return $this->response([
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'role' => $user->role,
+                'role' => $role,
             ],
             'token' => $token,
             'token_type' => 'Bearer',
@@ -216,12 +230,16 @@ class AuthApiController extends Controller
      */
     public function me(Request $request)
     {
+        $role = class_exists(\Modules\AuthModule\Helpers\RoleHelper::class)
+            ? \Modules\AuthModule\Helpers\RoleHelper::getRole($request->user())
+            : ($request->user()->role ?? null);
+
         return $this->response([
             'user' => [
                 'id' => $request->user()->id,
                 'name' => $request->user()->name,
                 'email' => $request->user()->email,
-                'role' => $request->user()->role,
+                'role' => $role,
             ],
         ], __('User information'), 200);
     }

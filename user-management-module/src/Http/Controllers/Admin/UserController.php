@@ -30,27 +30,25 @@ class UserController extends Controller
             return redirect()->route('login')->with('error', __('You need to log in.'));
         }
 
-        $role = $user->role ?? null;
-
-        // Eğer role null veya boş ise, user olarak kabul et
-        if (empty($role)) {
-            $role = 'user';
-        }
-
-        // Debug için log ekle
-        \Log::info('User role check', [
-            'user_id' => $user->id,
-            'user_email' => $user->email,
-            'role' => $role,
-            'is_admin_or_manager' => in_array($role, ['admin', 'manager'])
-        ]);
+        $role = $this->getUserPrimaryRole($user);
 
         if (!in_array($role, ['admin', 'manager'])) {
-            // Dashboard'a yönlendir ve hata mesajı göster
             return redirect()->route('dashboard')->with('error', __('You do not have permission to access this page. Only admin and manager users can access.'));
         }
 
-        return null; // İzin var, devam et
+        return null;
+    }
+
+    /**
+     * Kullanıcının birincil rolünü al
+     */
+    protected function getUserPrimaryRole($user): string
+    {
+        if (config('role-permission-module.enabled', false) && class_exists(\Modules\RolePermissionModule\Services\RolePermissionService::class)) {
+            $role = app(\Modules\RolePermissionModule\Services\RolePermissionService::class)->getPrimaryRole($user);
+            return $role ?? 'user';
+        }
+        return $user->role ?? 'user';
     }
 
     /**
@@ -63,8 +61,17 @@ class UserController extends Controller
             return $check; // Redirect varsa döndür
         }
 
+        $availableRoles = ['user' => __('User'), 'manager' => __('Manager'), 'admin' => __('Admin')];
+        if (config('role-permission-module.enabled', false) && class_exists(\Modules\RolePermissionModule\Services\RolePermissionService::class)) {
+            $slugs = app(\Modules\RolePermissionModule\Services\RolePermissionService::class)->getAvailableRoleSlugs();
+            if (!empty($slugs)) {
+                $availableRoles = array_combine($slugs, array_map(fn($s) => __(ucfirst($s)), $slugs));
+            }
+        }
+
         return view('user-management-module::admin.users.index', [
-            'title' => __('User Management')
+            'title' => __('User Management'),
+            'availableRoles' => $availableRoles,
         ]);
     }
 
@@ -124,7 +131,7 @@ class UserController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
-                    'role' => $user->role ?? '-',
+                    'role' => $this->getUserPrimaryRole($user) ?: '-',
                     'is_active' => $user->is_active,
                     'created_at' => $user->created_at ? $user->created_at->format('d.m.Y H:i') : '-',
                     'actions' => view('user-management-module::admin.users.partials.actions', ['user' => $user])->render(),
@@ -158,11 +165,21 @@ class UserController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
+        $roleRule = 'nullable|string';
+        if (config('role-permission-module.enabled', false) && class_exists(\Modules\RolePermissionModule\Services\RolePermissionService::class)) {
+            $roles = app(\Modules\RolePermissionModule\Services\RolePermissionService::class)->getAvailableRoleSlugs();
+            if (!empty($roles)) {
+                $roleRule = 'nullable|string|in:' . implode(',', $roles);
+            }
+        } else {
+            $roleRule = 'nullable|string|in:admin,manager,user';
+        }
+
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
-            'role' => 'nullable|string|in:admin,manager,user',
+            'role' => $roleRule,
             'is_active' => 'nullable|boolean',
             'tenant_id' => 'nullable|integer|exists:tenants,id',
         ]);
@@ -185,7 +202,7 @@ class UserController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
-                    'role' => $user->role,
+                    'role' => $this->getUserPrimaryRole($user),
                     'is_active' => $user->is_active,
                 ]
             ], 201);
@@ -202,11 +219,21 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user): JsonResponse
     {
+        $roleRule = 'nullable|string';
+        if (config('role-permission-module.enabled', false) && class_exists(\Modules\RolePermissionModule\Services\RolePermissionService::class)) {
+            $roles = app(\Modules\RolePermissionModule\Services\RolePermissionService::class)->getAvailableRoleSlugs();
+            if (!empty($roles)) {
+                $roleRule = 'nullable|string|in:' . implode(',', $roles);
+            }
+        } else {
+            $roleRule = 'nullable|string|in:admin,manager,user';
+        }
+
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email,' . $user->id,
             'password' => 'nullable|string|min:8|confirmed',
-            'role' => 'nullable|string|in:admin,manager,user',
+            'role' => $roleRule,
             'is_active' => 'nullable|boolean',
         ]);
 
@@ -228,7 +255,7 @@ class UserController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
-                    'role' => $user->role,
+                    'role' => $this->getUserPrimaryRole($user),
                     'is_active' => $user->is_active,
                 ]
             ], 200);
@@ -295,7 +322,7 @@ class UserController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'role' => $user->role,
+                'role' => $this->getUserPrimaryRole($user),
                 'is_active' => $user->is_active,
             ]
         ], 200);

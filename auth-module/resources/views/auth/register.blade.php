@@ -20,7 +20,7 @@
                             {{ __('Sign Up') }}
                         </h1>
                         <p class="text-sm text-gray-500 dark:text-gray-400">
-                            {{ __('Enter your email and password to sign up!') }}
+                            {{ __('Create your account or register your company.') }}
                         </p>
                     </div>
                     <div>
@@ -57,8 +57,20 @@
                         </div>
                         <form method="POST" action="{{ route('register') }}">
                             @csrf
+                            <!-- User / Company sekmeleri (radio + CSS) -->
+                            <div class="mb-5 flex rounded-lg border border-gray-200 bg-gray-50 p-1 dark:border-gray-700 dark:bg-gray-800">
+                                <input type="radio" name="register_type" id="register_type_user" value="user" class="sr-only peer/user" {{ old('register_type', 'user') === 'user' ? 'checked' : '' }}>
+                                <label for="register_type_user"
+                                    class="peer-checked/user:bg-white peer-checked/user:text-brand-600 peer-checked/user:shadow flex-1 cursor-pointer rounded-md px-4 py-2.5 text-center text-sm font-medium transition text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white dark:peer-checked/user:bg-gray-700 dark:peer-checked/user:text-brand-400">
+                                    {{ __('User') }}
+                                </label>
+                                <input type="radio" name="register_type" id="register_type_company" value="company" class="sr-only peer/company" {{ old('register_type') === 'company' ? 'checked' : '' }}>
+                                <label for="register_type_company"
+                                    class="peer-checked/company:bg-white peer-checked/company:text-brand-600 peer-checked/company:shadow flex-1 cursor-pointer rounded-md px-4 py-2.5 text-center text-sm font-medium transition text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white dark:peer-checked/company:bg-gray-700 dark:peer-checked/company:text-brand-400">
+                                    {{ __('Company') }}
+                                </label>
+                            </div>
                             <div class="space-y-5">
-                                <!-- Error Messages -->
                                 @if($errors->any())
                                 <div class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400" role="alert">
                                     <ul class="list-disc list-inside space-y-1">
@@ -69,12 +81,32 @@
                                 </div>
                                 @endif
 
-                                <!-- Success Message -->
                                 @if(session('success'))
                                 <div class="p-4 mb-4 text-sm text-green-800 rounded-lg bg-green-50 dark:bg-gray-800 dark:text-green-400" role="alert">
                                     {{ session('success') }}
                                 </div>
                                 @endif
+
+                                <!-- Company alanları (sadece Company seçiliyken görünür) -->
+                                <div id="company-fields-wrap" class="hidden company-fields-block space-y-5 rounded-lg border border-gray-200 bg-gray-50/50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
+                                    <p class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ __('Company Information') }}</p>
+                                    <div>
+                                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">{{ __('Company Name') }} <span class="text-error-500">*</span></label>
+                                        <input type="text" name="company_name" value="{{ old('company_name') }}"
+                                            placeholder="{{ __('Company or organization name') }}"
+                                            class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 @error('company_name') border-red-500 @enderror" />
+                                        @error('company_name')
+                                        <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                    <div>
+                                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">{{ __('Company Email') }}</label>
+                                        <input type="email" name="company_email" value="{{ old('company_email') }}"
+                                            placeholder="info@company.com"
+                                            class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30" />
+                                    </div>
+                                </div>
+                                <p id="your-account-label" class="hidden company-fields-block text-sm font-medium text-gray-700 dark:text-gray-300">{{ __('Your Account') }}</p>
 
                                 <!-- Name -->
                                 <div>
@@ -152,6 +184,21 @@
                                 </div>
                             </div>
                         </form>
+                        <script>
+                            (function() {
+                                var form = document.querySelector('form[action="{{ route('register') }}"]');
+                                if (!form) return;
+                                var companyRadio = form.querySelector('#register_type_company');
+                                var blocks = form.querySelectorAll('.company-fields-block');
+                                function toggle() {
+                                    var show = companyRadio && companyRadio.checked;
+                                    blocks.forEach(function(el) { el.classList.toggle('hidden', !show); });
+                                }
+                                form.querySelector('#register_type_user') && form.querySelector('#register_type_user').addEventListener('change', toggle);
+                                if (companyRadio) companyRadio.addEventListener('change', toggle);
+                                toggle();
+                            })();
+                        </script>
                         <div class="mt-5">
                             <p class="text-center text-sm font-normal text-gray-700 sm:text-start dark:text-gray-400">
                                 {{ __('Already have an account?') }}

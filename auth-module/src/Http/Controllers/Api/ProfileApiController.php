@@ -27,6 +27,8 @@ class ProfileApiController extends Controller
     {
         $user = $request->user();
 
+        $bio = $user->profileDetail?->bio ?? null;
+
         return $this->response([
             'user' => [
                 'id' => $user->id,
@@ -35,8 +37,8 @@ class ProfileApiController extends Controller
                 'avatar' => $user->avatar ?? null,
                 'avatar_url' => $this->getAvatarUrl($user),
                 'phone' => $user->phone ?? null,
-                'bio' => $user->bio ?? null,
-                'role' => $user->role ?? null,
+                'bio' => $bio,
+                'role' => class_exists(\Modules\AuthModule\Helpers\RoleHelper::class) ? \Modules\AuthModule\Helpers\RoleHelper::getRole($user) : null,
                 'created_at' => $user->created_at,
                 'updated_at' => $user->updated_at,
             ],
@@ -81,12 +83,19 @@ class ProfileApiController extends Controller
             $updateData['phone'] = $request->phone;
         }
 
+        $user->update($updateData);
+
         if ($request->has('bio')) {
-            $updateData['bio'] = $request->bio;
+            $user->profileDetail()->updateOrCreate(
+                ['user_id' => $user->id],
+                ['bio' => $request->bio]
+            );
         }
 
-        $user->update($updateData);
         $user->refresh();
+        $user->load('profileDetail');
+
+        $bio = $user->profileDetail?->bio ?? null;
 
         return $this->response([
             'user' => [
@@ -96,8 +105,8 @@ class ProfileApiController extends Controller
                 'avatar' => $user->avatar ?? null,
                 'avatar_url' => $this->getAvatarUrl($user),
                 'phone' => $user->phone ?? null,
-                'bio' => $user->bio ?? null,
-                'role' => $user->role ?? null,
+                'bio' => $bio,
+                'role' => class_exists(\Modules\AuthModule\Helpers\RoleHelper::class) ? \Modules\AuthModule\Helpers\RoleHelper::getRole($user) : null,
             ],
         ], __('Profile updated successfully.'), 200);
     }

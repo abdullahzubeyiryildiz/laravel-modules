@@ -74,10 +74,8 @@ class SocialAuthService implements SocialAuthServiceInterface
             $userData['tenant_id'] = $tenantId;
         }
 
-        // Role ekle
-        if (property_exists($userModel, 'role')) {
-            $userData['role'] = config('auth-module.roles.default', 'user');
-        }
+        // Rol user_roles ile atanacak (users.role kolonu kaldırıldı)
+        $defaultRole = config('role-permission-module.default_role_slug', config('auth-module.roles.default', 'user'));
 
         // is_active ekle
         if (property_exists($userModel, 'is_active')) {
@@ -89,7 +87,17 @@ class SocialAuthService implements SocialAuthServiceInterface
             $userData['avatar'] = $providerUser->getAvatar();
         }
 
-        return $userModel::create($userData);
+        $user = $userModel::create($userData);
+
+        if (config('role-permission-module.enabled', false) && class_exists(\Modules\RolePermissionModule\Services\RolePermissionService::class)) {
+            try {
+                app(\Modules\RolePermissionModule\Services\RolePermissionService::class)->assignRole($user, $defaultRole, $tenantId);
+            } catch (\Exception $e) {
+                \Log::warning('Role assignment failed: ' . $e->getMessage());
+            }
+        }
+
+        return $user;
     }
 
     /**

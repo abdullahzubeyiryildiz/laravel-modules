@@ -3,9 +3,11 @@
 namespace Modules\AuthModule\Http\Controllers\Auth;
 
 use Modules\AuthModule\Http\Controllers\Controller;
+use App\Models\Tenant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
@@ -105,22 +107,33 @@ class AuthController extends Controller
     }
 
     /**
-     * Kullanıcı kaydı
+     * Kullanıcı kaydı (User veya Company/Tenant)
      */
     public function register(Request $request)
     {
-        $validator = Validator::make($request->all(), [
+        $registerType = $request->get('register_type', 'user');
+
+        $rules = [
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
             'password' => 'required|string|min:' . config('auth-module.validation.password_min_length', 6) . '|confirmed',
-        ], [
+        ];
+        $messages = [
             'name.required' => __('The name field is required.'),
             'email.required' => __('The email field is required.'),
             'email.email' => __('The email must be a valid email address.'),
             'password.required' => __('The password field is required.'),
             'password.min' => __('The password must be at least :min characters.', ['min' => config('auth-module.validation.password_min_length', 6)]),
             'password.confirmed' => __('The password confirmation does not match.'),
-        ]);
+        ];
+
+        if ($registerType === 'company') {
+            $rules['company_name'] = 'required|string|max:255';
+            $rules['company_email'] = 'nullable|email|max:255';
+            $messages['company_name.required'] = __('The company name is required.');
+        }
+
+        $validator = Validator::make($request->all(), $rules, $messages);
 
         if ($validator->fails()) {
             return back()
@@ -131,8 +144,26 @@ class AuthController extends Controller
         $userModel = config('auth-module.multi_tenant.user_model', 'App\Models\User');
         $tenantId = null;
 
-        // Multi-tenant desteği (opsiyonel)
-        if (config('auth-module.multi_tenant.enabled', false)) {
+        // Company kaydı: önce Tenant oluştur
+        if ($registerType === 'company') {
+            $baseSlug = Str::slug($request->company_name);
+            $slug = $baseSlug;
+            $i = 1;
+            while (Tenant::where('slug', $slug)->exists()) {
+                $slug = $baseSlug . '-' . $i++;
+            }
+            $tenant = Tenant::create([
+                'name' => $request->company_name,
+                'slug' => $slug,
+                'email' => $request->filled('company_email') ? $request->company_email : $request->email,
+                'is_active' => true,
+                'is_trial' => true,
+            ]);
+            $tenantId = $tenant->id;
+        }
+
+        // Mevcut tenant bağlamında kayıt (multi-tenant açıksa ve company değilse)
+        if ($tenantId === null && config('auth-module.multi_tenant.enabled', false)) {
             $tenantHelperClass = config('auth-module.multi_tenant.tenant_helper_class', 'App\Helpers\TenantHelper');
             if (class_exists($tenantHelperClass)) {
                 $tenant = method_exists($tenantHelperClass, 'current')
@@ -142,7 +173,6 @@ class AuthController extends Controller
                 if ($tenant) {
                     $tenantId = $tenant->id;
 
-                    // Maksimum kullanıcı kontrolü
                     if (property_exists($tenant, 'max_users')) {
                         $userCount = $userModel::where('tenant_id', $tenantId)->count();
                         if ($userCount >= $tenant->max_users) {
@@ -152,7 +182,6 @@ class AuthController extends Controller
                         }
                     }
 
-                    // Email unique kontrolü (tenant bazlı)
                     $existingUser = $userModel::where('email', $request->email)
                         ->where('tenant_id', $tenantId)
                         ->first();
@@ -163,37 +192,48 @@ class AuthController extends Controller
                             ->withInput($request->except('password', 'password_confirmation'));
                     }
                 }
-                // Tenant yoksa normal devam et (multi-tenant kapalı gibi davran)
             }
         }
 
-        // Multi-tenant olmadan email kontrolü
-        if (!isset($tenantId)) {
-            $existingUser = $userModel::where('email', $request->email)->first();
-            if ($existingUser) {
-                return back()
-                    ->withErrors(['email' => __('This email address is already in use.')])
-                    ->withInput($request->except('password', 'password_confirmation'));
-            }
+        // Email benzersizlik (tenant yoksa veya yeni tenant ise global kontrol)
+        $existingQuery = $userModel::where('email', $request->email);
+        if ($tenantId) {
+            $existingQuery->where('tenant_id', $tenantId);
+        } else {
+            $existingQuery->whereNull('tenant_id');
+        }
+        if ($existingQuery->exists()) {
+            return back()
+                ->withErrors(['email' => __('This email address is already in use.')])
+                ->withInput($request->except('password', 'password_confirmation'));
         }
 
-        // Kullanıcı oluştur
         $userData = [
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => 'user',
             'is_active' => true,
             'email_verified_at' => now(),
         ];
-
         if ($tenantId) {
             $userData['tenant_id'] = $tenantId;
         }
 
         $user = $userModel::create($userData);
 
-        // Notification gönder (mail ve/veya SMS)
+        $roleToAssign = ($registerType === 'company')
+            ? (config('role-permission-module.company_admin_role_slug', 'admin'))
+            : config('role-permission-module.default_role_slug', 'user');
+
+        if (class_exists(\Modules\RolePermissionModule\Services\RolePermissionService::class)) {
+            try {
+                app(\Modules\RolePermissionModule\Services\RolePermissionService::class)
+                    ->assignRole($user, $roleToAssign, $tenantId);
+            } catch (\Exception $e) {
+                \Log::warning('Kayıt sonrası rol atama hatası: ' . $e->getMessage(), ['user_id' => $user->id]);
+            }
+        }
+
         $this->sendWelcomeNotification($user);
 
         Auth::login($user);

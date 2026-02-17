@@ -19,11 +19,11 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('role_id')->constrained('roles')->onDelete('cascade');
-            $table->foreignId('tenant_id')->nullable()->constrained('tenants')->nullOnDelete();
+            $table->foreignId('tenant_id')->nullable()->constrained('tenants')->nullOnDelete(); // Kullanılmıyor; rol ilişkisi user_id bazlı
             $table->timestamps();
 
-            $table->unique(['user_id', 'role_id', 'tenant_id'], 'user_roles_unique');
-            $table->index(['user_id', 'tenant_id']);
+            $table->unique(['user_id', 'role_id'], 'user_roles_user_role_unique');
+            $table->index('user_id');
         });
     }
 

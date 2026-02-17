@@ -9,7 +9,7 @@ use Modules\RolePermissionModule\Services\RolePermissionService;
 trait HasRoles
 {
     /**
-     * Roller ilişkisi
+     * Roller ilişkisi (user_id bazlı; bir kullanıcının birden fazla rolü olabilir, tenant kullanılmaz)
      */
     public function roles(): BelongsToMany
     {

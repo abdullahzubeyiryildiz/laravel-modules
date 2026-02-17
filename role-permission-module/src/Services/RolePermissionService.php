@@ -27,7 +27,8 @@ class RolePermissionService implements RolePermissionServiceInterface
     }
 
     /**
-     * Kullanıcının rollerini al (cache'li)
+     * Kullanıcının rollerini al (cache'li).
+     * Spatie laravel-permission mantığı: sadece user_id ile bağlı, tenant_id kullanılmaz.
      */
     public function getRoles(?Authenticatable $user, ?int $tenantId = null): array
     {
@@ -35,82 +36,63 @@ class RolePermissionService implements RolePermissionServiceInterface
             return [];
         }
 
-        $tenantId = $tenantId ?? $this->getTenantId();
-        $cacheKey = "user_roles:{$user->id}:{$tenantId}";
+        $cacheKey = "user_roles:{$user->id}";
 
         if (config('role-permission-module.cache.enabled', true)) {
-            return Cache::remember($cacheKey, config('role-permission-module.cache.ttl', 3600), function () use ($user, $tenantId) {
-                return $this->fetchUserRoles($user->id, $tenantId);
+            return Cache::remember($cacheKey, config('role-permission-module.cache.ttl', 3600), function () use ($user) {
+                return $this->fetchUserRoles($user->id);
             });
         }
 
-        return $this->fetchUserRoles($user->id, $tenantId);
+        return $this->fetchUserRoles($user->id);
     }
 
-    protected function fetchUserRoles(int $userId, ?int $tenantId): array
+    /**
+     * user_roles tablosundan sadece user_id ile roller (tenant_id filtresi yok).
+     */
+    protected function fetchUserRoles(int $userId): array
     {
         $roles = [];
 
-        // user_roles tablosundan al
         if (Schema::hasTable('user_roles')) {
-            $query = DB::table('user_roles')
+            $roles = DB::table('user_roles')
                 ->join('roles', 'user_roles.role_id', '=', 'roles.id')
                 ->where('user_roles.user_id', $userId)
-                ->where('roles.is_active', true);
-
-            if ($tenantId !== null) {
-                $query->where(function ($q) use ($tenantId) {
-                    $q->where('user_roles.tenant_id', $tenantId)
-                        ->orWhereNull('user_roles.tenant_id');
-                });
-            } else {
-                $query->whereNull('user_roles.tenant_id');
-            }
-
-            $roles = $query->pluck('roles.slug')->unique()->values()->toArray();
-        }
-
-        // tenant_users'tan fallback (rbac-module legacy)
-        if (empty($roles) && $tenantId && Schema::hasTable('tenant_users')) {
-            $tenantUser = DB::table('tenant_users')
-                ->join('roles', 'tenant_users.role_id', '=', 'roles.id')
-                ->where('tenant_users.user_id', $userId)
-                ->where('tenant_users.tenant_id', $tenantId)
-                ->where('tenant_users.is_active', true)
-                ->select('roles.slug')
-                ->first();
-            if ($tenantUser) {
-                $roles = [$tenantUser->slug];
-            }
+                ->where('roles.is_active', true)
+                ->whereNull('roles.deleted_at')
+                ->pluck('roles.slug')
+                ->unique()
+                ->values()
+                ->toArray();
         }
 
         return array_values(array_unique($roles));
     }
 
     /**
-     * Kullanıcının birincil rolünü al
+     * Kullanıcının birincil rolünü al (user_id bazlı, tenant_id kullanılmaz).
      */
     public function getPrimaryRole(?Authenticatable $user, ?int $tenantId = null): ?string
     {
         $roles = $this->getRoles($user, $tenantId);
 
         if (empty($roles)) {
-            // Eski users.role kolonu desteği (geçiş dönemi)
             if (isset($user->role) && $user->role) {
                 return $user->role;
             }
             return null;
         }
 
-        // En yüksek seviyeli rolü döndür
-        $tenantId = $tenantId ?? $this->getTenantId();
+        // En yüksek seviyeli rolü döndür (roller global, slug ile)
         $role = Role::whereIn('slug', $roles)
-            ->when($tenantId !== null, fn($q) => $q->where(fn($q2) => $q2->where('tenant_id', $tenantId)->orWhereNull('tenant_id')))
-            ->when($tenantId === null, fn($q) => $q->whereNull('tenant_id'))
             ->orderByDesc('level')
             ->first();
 
-        return $role?->slug;
+        if ($role) {
+            return $role->slug;
+        }
+
+        return $roles[0] ?? null;
     }
 
     /**
@@ -143,54 +125,40 @@ class RolePermissionService implements RolePermissionServiceInterface
             return true;
         }
 
-        $tenantId = $tenantId ?? $this->getTenantId();
-        $cacheKey = "user_permissions:{$user->id}:{$tenantId}";
+        $cacheKey = "user_permissions:{$user->id}";
 
         $permissions = config('role-permission-module.cache.enabled', true)
-            ? Cache::remember($cacheKey, config('role-permission-module.cache.ttl', 3600), fn() => $this->fetchUserPermissions($user->id, $tenantId))
-            : $this->fetchUserPermissions($user->id, $tenantId);
+            ? Cache::remember($cacheKey, config('role-permission-module.cache.ttl', 3600), fn() => $this->fetchUserPermissions($user->id))
+            : $this->fetchUserPermissions($user->id);
 
         return in_array($permissionSlug, $permissions) || in_array('*', $permissions);
     }
 
-    protected function fetchUserPermissions(int $userId, ?int $tenantId): array
+    protected function fetchUserPermissions(int $userId): array
     {
-        $query = DB::table('user_roles')
+        return DB::table('user_roles')
             ->join('roles', 'user_roles.role_id', '=', 'roles.id')
             ->join('role_permissions', 'roles.id', '=', 'role_permissions.role_id')
             ->join('permissions', 'role_permissions.permission_id', '=', 'permissions.id')
             ->where('user_roles.user_id', $userId)
             ->where('roles.is_active', true)
-            ->where('permissions.is_active', true);
-
-        if ($tenantId !== null) {
-            $query->where(function ($q) use ($tenantId) {
-                $q->where('user_roles.tenant_id', $tenantId)->orWhereNull('user_roles.tenant_id');
-            });
-        } else {
-            $query->whereNull('user_roles.tenant_id');
-        }
-
-        return $query->pluck('permissions.slug')->unique()->values()->toArray();
+            ->where('permissions.is_active', true)
+            ->pluck('permissions.slug')
+            ->unique()
+            ->values()
+            ->toArray();
     }
 
     /**
-     * Role ata
+     * Role ata (user_id bazlı, tenant_id kullanılmaz - Spatie mantığı).
      */
     public function assignRole(Authenticatable $user, string $roleSlug, ?int $tenantId = null): void
     {
-        $tenantId = $tenantId ?? $this->getTenantId();
-        $role = Role::where('slug', $roleSlug)
-            ->when($tenantId !== null, fn($q) => $q->where(fn($q2) => $q2->where('tenant_id', $tenantId)->orWhereNull('tenant_id')))
-            ->when($tenantId === null, fn($q) => $q->whereNull('tenant_id'))
-            ->first();
+        $role = Role::where('slug', $roleSlug)->first();
 
         if (!$role) {
-            $this->seedDefaults($tenantId);
-            $role = Role::where('slug', $roleSlug)
-                ->when($tenantId !== null, fn($q) => $q->where(fn($q2) => $q2->where('tenant_id', $tenantId)->orWhereNull('tenant_id')))
-                ->when($tenantId === null, fn($q) => $q->whereNull('tenant_id'))
-                ->first();
+            $this->seedDefaults(null);
+            $role = Role::where('slug', $roleSlug)->first();
         }
 
         if (!$role) {
@@ -200,27 +168,26 @@ class RolePermissionService implements RolePermissionServiceInterface
         $exists = DB::table('user_roles')
             ->where('user_id', $user->id)
             ->where('role_id', $role->id)
-            ->where('tenant_id', $tenantId)
+            ->whereNull('tenant_id')
             ->exists();
 
         if (!$exists) {
             DB::table('user_roles')->insert([
                 'user_id' => $user->id,
                 'role_id' => $role->id,
-                'tenant_id' => $tenantId,
+                'tenant_id' => null,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
-            $this->clearUserCache($user->id, $tenantId);
+            $this->clearUserCache($user->id);
         }
     }
 
     /**
-     * Rolü kaldır
+     * Rolü kaldır (user_id bazlı).
      */
     public function removeRole(Authenticatable $user, string $roleSlug, ?int $tenantId = null): void
     {
-        $tenantId = $tenantId ?? $this->getTenantId();
         $role = Role::where('slug', $roleSlug)->first();
 
         if (!$role) {
@@ -230,40 +197,31 @@ class RolePermissionService implements RolePermissionServiceInterface
         DB::table('user_roles')
             ->where('user_id', $user->id)
             ->where('role_id', $role->id)
-            ->where('tenant_id', $tenantId)
             ->delete();
 
-        $this->clearUserCache($user->id, $tenantId);
+        $this->clearUserCache($user->id);
     }
 
     /**
-     * Rolleri senkronize et
+     * Rolleri senkronize et (user_id bazlı, tenant_id kullanılmaz - Spatie mantığı).
      */
     public function syncRoles(Authenticatable $user, array $roleSlugs, ?int $tenantId = null): void
     {
-        $tenantId = $tenantId ?? $this->getTenantId();
+        $roles = Role::whereIn('slug', $roleSlugs)->pluck('id');
 
-        $roles = Role::whereIn('slug', $roleSlugs)
-            ->when($tenantId !== null, fn($q) => $q->where(fn($q2) => $q2->where('tenant_id', $tenantId)->orWhereNull('tenant_id')))
-            ->when($tenantId === null, fn($q) => $q->whereNull('tenant_id'))
-            ->pluck('id');
-
-        DB::table('user_roles')
-            ->where('user_id', $user->id)
-            ->where('tenant_id', $tenantId)
-            ->delete();
+        DB::table('user_roles')->where('user_id', $user->id)->delete();
 
         foreach ($roles as $roleId) {
             DB::table('user_roles')->insert([
                 'user_id' => $user->id,
                 'role_id' => $roleId,
-                'tenant_id' => $tenantId,
+                'tenant_id' => null,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
         }
 
-        $this->clearUserCache($user->id, $tenantId);
+        $this->clearUserCache($user->id);
     }
 
     /**
@@ -282,22 +240,18 @@ class RolePermissionService implements RolePermissionServiceInterface
         return $this->isAdmin($user, $tenantId);
     }
 
-    protected function clearUserCache(int $userId, ?int $tenantId): void
+    protected function clearUserCache(int $userId): void
     {
-        Cache::forget("user_roles:{$userId}:{$tenantId}");
-        Cache::forget("user_permissions:{$userId}:{$tenantId}");
+        Cache::forget("user_roles:{$userId}");
+        Cache::forget("user_permissions:{$userId}");
     }
 
     /**
-     * Mevcut rollerin slug listesini al (dinamik)
+     * Mevcut rollerin slug listesini al (global roller: tenant_id null).
      */
     public function getAvailableRoleSlugs(?int $tenantId = null): array
     {
-        $tenantId = $tenantId ?? $this->getTenantId();
-
-        return Role::when($tenantId !== null, fn($q) => $q->where(fn($q2) => $q2->where('tenant_id', $tenantId)->orWhereNull('tenant_id')))
-            ->when($tenantId === null, fn($q) => $q->whereNull('tenant_id'))
-            ->where('is_active', true)
+        return Role::where('is_active', true)
             ->pluck('slug')
             ->toArray();
     }
@@ -324,8 +278,8 @@ class RolePermissionService implements RolePermissionServiceInterface
 
         foreach ($roles as $data) {
             Role::firstOrCreate(
-                ['tenant_id' => $tenantId, 'slug' => $data['slug']],
-                array_merge($data, ['tenant_id' => $tenantId])
+                ['slug' => $data['slug']],
+                $data
             );
         }
 
@@ -336,7 +290,7 @@ class RolePermissionService implements RolePermissionServiceInterface
             );
         }
 
-        $adminRole = Role::where('tenant_id', $tenantId)->where('slug', 'admin')->first();
+        $adminRole = Role::where('slug', 'admin')->first();
         if ($adminRole) {
             $adminRole->permissions()->sync(Permission::where('tenant_id', $tenantId)->pluck('id'));
         }

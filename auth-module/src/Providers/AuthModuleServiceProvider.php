@@ -32,6 +32,8 @@ class AuthModuleServiceProvider extends ServiceProvider
         $this->app->singleton(SocialAuthService::class, function ($app) {
             return new SocialAuthService();
         });
+
+        $this->app->singleton(\Modules\AuthModule\Services\UserService::class);
     }
 
     /**
@@ -78,6 +80,9 @@ class AuthModuleServiceProvider extends ServiceProvider
         if (config('auth-module.routes.enabled', true)) {
             $this->loadRoutes();
         }
+
+        // Admin user management routes (admin/users)
+        $this->loadRoutesFrom(__DIR__ . '/../../routes/admin.php');
 
         // Load API routes
         if (config('auth-module.api.enabled', true)) {

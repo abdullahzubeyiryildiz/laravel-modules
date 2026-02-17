@@ -6,13 +6,12 @@ Modüler Laravel paketleri. Her modül bağımsız kullanılabilir.
 
 | Modül | Paket | Özellikler |
 |-------|--------|------------|
-| **Auth** | `modules/auth-module` | Login, register, password reset · Social login (Google, Facebook) · Profil (avatar, şifre değiştir) · Multi-tenant (opsiyonel) · Web + API route'ları · Next.js uyumu · Otomatik trait'ler: HasSocialAccounts, HasTenantAndRole · Özelleştirilebilir view/route/config |
+| **Auth** | `modules/auth-module` | Login, register, password reset · Social login (Google, Facebook) · Profil (avatar, şifre değiştir) · **Admin kullanıcı yönetimi** (CRUD, DataTable, `admin/users`) · Multi-tenant (opsiyonel) · Web + API · Otomatik trait'ler: HasSocialAccounts, HasTenantAndRole · Özelleştirilebilir view/route/config |
 | **File Manager** | `modules/file-manager-module` | S3/R2/MinIO · Signed URL (private dosyalar) · Dosya deduplication · Tenant izolasyonu · Audit log (RBAC ile opsiyonel) · Image SEO (alt_text, width, height) · Meta bilgileri, soft delete · API: yükleme, listeleme, signed-url, alt-text |
 | **Image Upload** | `modules/image-upload-module` | Resize ve thumbnail · S3 + public disk · JPEG, PNG, GIF, WebP, SVG, PDF · Intervention Image (opsiyonel) · Bağımsız, migration yok |
 | **Notification** | `modules/notification-module` | Mail (SMTP, Mailgun, SendGrid) · SMS (Mutlucell vb.) · Database notifications (Laravel built-in) · Listeleme, okundu işaretleme · API: gönder, listele, mark-as-read |
 | **RBAC** (opsiyonel) | `modules/rbac-module` | Rol ve yetki (roles, permissions, role_permissions) · Audit log servisi · Tenant kullanıcıları (tenant_users) · hasPermission, seedDefaultRolesAndPermissions · Diğer modüller bu modül olmadan çalışır |
-| **Role Permission** | `modules/role-permission-module` | Dinamik rol/izin (veritabanından) · HasRoles trait, hasRole/hasPermission · Çoklu tenant (opsiyonel) · Cache · auth-module, rbac-module, user-management ile entegre · `role-permission:seed` |
-| **User Management** | `modules/user-management-module` | Kullanıcı CRUD · Admin paneli, DataTable · role-permission-module ile dinamik rol atama |
+| **Role Permission** | `modules/role-permission-module` | Dinamik rol/izin (veritabanından) · HasRoles trait, hasRole/hasPermission · Çoklu tenant (opsiyonel) · Cache · auth-module (admin users), rbac-module ile entegre · `role-permission:seed` |
 
 ## Kurulum
 
@@ -41,9 +40,8 @@ Migration gerektiren modüller: auth-module, file-manager-module, notification-m
 
 ## Bağımlılıklar
 
-- **Auth** → File Manager, Notification, RBAC (hepsi opsiyonel)
+- **Auth** → File Manager, Notification, RBAC, Role Permission (hepsi opsiyonel; admin kullanıcı listesi role-permission ile dinamik rol kullanır)
 - **File Manager** → Image Upload, RBAC (opsiyonel)
-- **User Management** → Role Permission (rol atama için)
 - **Notification, Image Upload, RBAC, Role Permission** → Bağımsız
 
 ## Dokümantasyon

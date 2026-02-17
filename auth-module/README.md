@@ -70,6 +70,17 @@ class User extends Authenticatable
 
 ## 🚀 Kullanım
 
+### Rol & Yetki Sistemi
+
+Auth Module, kullanıcı rolleri ve izinleri için **isteğe bağlı** olarak `role-permission-module` paketini kullanır:
+
+- Roller globaldir ve **kullanıcıya (`user_id`) göre** atanır (`user_roles` pivot tablosu).
+- Bir kullanıcının birden fazla rolü olabilir (örn. `admin`, `manager`, `user`).
+- Multi-tenant açıksa bile rol atama kullanıcı bazlıdır; tenant'a göre ayrı rol kopyaları oluşturulmaz.
+- Varsayılan roller: `admin`, `manager`, `user` (RolePermissionSeeder ile seed edilir).
+
+Yönetim panelinde kullanıcı oluştururken/düzenlerken seçtiğiniz rol, bu sistem üzerinden `user_roles` tablosuna yazılır ve Auth Module içindeki tüm `isAdmin`, `getUserRole` vb. kontroller bu rolleri kullanır.
+
 ### Web Routes
 
 Paket otomatik olarak aşağıdaki route'ları oluşturur:

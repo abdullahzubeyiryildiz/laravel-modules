@@ -3,7 +3,6 @@
 namespace Modules\RolePermissionModule\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -12,7 +11,6 @@ class Role extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'tenant_id',
         'name',
         'slug',
         'display_name',
@@ -29,14 +27,6 @@ class Role extends Model
     ];
 
     /**
-     * Tenant ilişkisi (opsiyonel)
-     */
-    public function tenant(): BelongsTo
-    {
-        return $this->belongsTo(\App\Models\Tenant::class);
-    }
-
-    /**
      * Permissions ilişkisi
      */
     public function permissions(): BelongsToMany
@@ -46,7 +36,8 @@ class Role extends Model
     }
 
     /**
-     * Users ilişkisi (user_roles pivot üzerinden)
+     * Kullanıcılar (user_roles pivot; sadece user_id bazlı, tenant_id kullanılmaz).
+     * Bir kullanıcının birden fazla rolü olabilir.
      */
     public function users(): BelongsToMany
     {

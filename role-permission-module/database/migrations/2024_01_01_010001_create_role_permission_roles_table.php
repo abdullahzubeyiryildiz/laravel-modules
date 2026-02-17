@@ -17,9 +17,8 @@ return new class extends Migration
 
         Schema::create('roles', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('tenant_id')->nullable()->constrained('tenants')->nullOnDelete();
             $table->string('name');
-            $table->string('slug');
+            $table->string('slug')->unique();
             $table->string('display_name')->nullable();
             $table->text('description')->nullable();
             $table->boolean('is_system')->default(false);
@@ -28,8 +27,7 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->index(['tenant_id', 'is_active']);
-            $table->unique(['tenant_id', 'slug'], 'roles_tenant_slug_unique');
+            $table->index('is_active');
         });
     }
 

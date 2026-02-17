@@ -14,4 +14,3 @@
         {{ __('Delete') }}
     </button>
 </div>
-

@@ -124,8 +124,8 @@
     </div>
 
     <!-- Modals -->
-    @include('user-management-module::admin.users.partials.create-modal')
-    @include('user-management-module::admin.users.partials.edit-modal')
+    @include('auth-module::admin.users.partials.create-modal')
+    @include('auth-module::admin.users.partials.edit-modal')
 @endsection
 
 @push('scripts')

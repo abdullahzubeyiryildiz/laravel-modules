@@ -201,6 +201,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         fetch('{{ route("admin.users.datatable") }}', {
             method: 'POST',
+            credentials: 'same-origin',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -406,6 +407,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         fetch(`{{ route("admin.users.destroy", ":id") }}`.replace(':id', userId), {
             method: 'DELETE',
+            credentials: 'same-origin',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                 'Accept': 'application/json'

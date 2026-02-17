@@ -164,6 +164,7 @@ function submitCreateUser(event) {
 
     fetch('{{ route("admin.users.store") }}', {
         method: 'POST',
+        credentials: 'same-origin',
         headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
             'Accept': 'application/json'

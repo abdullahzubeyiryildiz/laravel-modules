@@ -99,6 +99,11 @@ class UserController extends Controller
                 });
             }
 
+            // Durum filtresi (is_active)
+            if ($request->filled('status') && in_array($request->input('status'), ['0', '1'], true)) {
+                $query->where('is_active', (bool) $request->input('status'));
+            }
+
             // Toplam kayıt sayısı (filtreleme öncesi)
             $totalQuery = $userModel::withoutGlobalScopes();
 

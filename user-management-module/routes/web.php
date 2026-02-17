@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::middleware('auth')->prefix('admin/users')->name('admin.users.')->group(function () {
+Route::middleware(['web', 'auth'])->prefix('admin/users')->name('admin.users.')->group(function () {
     Route::get('/', [\Modules\UserManagementModule\Http\Controllers\Admin\UserController::class, 'index'])->name('index');
     Route::post('/datatable', [\Modules\UserManagementModule\Http\Controllers\Admin\UserController::class, 'datatable'])->name('datatable');
     Route::post('/', [\Modules\UserManagementModule\Http\Controllers\Admin\UserController::class, 'store'])->name('store');

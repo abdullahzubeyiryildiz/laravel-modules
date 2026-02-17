@@ -144,6 +144,7 @@ window.openEditModal = function(userId) {
     // Kullanıcı bilgilerini yükle
     fetch(`{{ route("admin.users.show", ":id") }}`.replace(':id', userId), {
         method: 'GET',
+        credentials: 'same-origin',
         headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
             'Accept': 'application/json'
@@ -262,6 +263,7 @@ function submitEditUser(event) {
 
     fetch(`{{ route("admin.users.update", ":id") }}`.replace(':id', userId), {
         method: 'POST',
+        credentials: 'same-origin',
         headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
             'Accept': 'application/json',

@@ -1,113 +1,22 @@
 # Laravel Modules
 
-Modüler Laravel paketleri koleksiyonu. Her modül bağımsız olarak kullanılabilir.
+Modüler Laravel paketleri. Her modül bağımsız kullanılabilir.
 
-## 📦 Modüller
+## Modüller
 
-### 🔐 Auth Module
-**Paket Adı:** `modules/auth-module`  
-**Açıklama:** Laravel authentication modülü (login, register, password reset, social login)  
-**GitHub:** [auth-module](auth-module/)
+| Modül | Paket | Özellikler |
+|-------|--------|------------|
+| **Auth** | `modules/auth-module` | Login, register, password reset · Social login (Google, Facebook) · Profil (avatar, şifre değiştir) · Multi-tenant (opsiyonel) · Web + API route'ları · Next.js uyumu · Otomatik trait'ler: HasSocialAccounts, HasTenantAndRole · Özelleştirilebilir view/route/config |
+| **File Manager** | `modules/file-manager-module` | S3/R2/MinIO · Signed URL (private dosyalar) · Dosya deduplication · Tenant izolasyonu · Audit log (RBAC ile opsiyonel) · Image SEO (alt_text, width, height) · Meta bilgileri, soft delete · API: yükleme, listeleme, signed-url, alt-text |
+| **Image Upload** | `modules/image-upload-module` | Resize ve thumbnail · S3 + public disk · JPEG, PNG, GIF, WebP, SVG, PDF · Intervention Image (opsiyonel) · Bağımsız, migration yok |
+| **Notification** | `modules/notification-module` | Mail (SMTP, Mailgun, SendGrid) · SMS (Mutlucell vb.) · Database notifications (Laravel built-in) · Listeleme, okundu işaretleme · API: gönder, listele, mark-as-read |
+| **RBAC** (opsiyonel) | `modules/rbac-module` | Rol ve yetki (roles, permissions, role_permissions) · Audit log servisi · Tenant kullanıcıları (tenant_users) · hasPermission, seedDefaultRolesAndPermissions · Diğer modüller bu modül olmadan çalışır |
+| **Role Permission** | `modules/role-permission-module` | Dinamik rol/izin (veritabanından) · HasRoles trait, hasRole/hasPermission · Çoklu tenant (opsiyonel) · Cache · auth-module, rbac-module, user-management ile entegre · `role-permission:seed` |
+| **User Management** | `modules/user-management-module` | Kullanıcı CRUD · Admin paneli, DataTable · role-permission-module ile dinamik rol atama |
 
-**Özellikler:**
-- ✅ Login, Register, Password Reset
-- ✅ Social Login (Google, Facebook)
-- ✅ Multi-tenant desteği (opsiyonel)
-- ✅ Web ve API endpoint'leri
-- ✅ Next.js entegrasyonu
-- ✅ Otomatik trait kurulumu (HasSocialAccounts, HasTenantAndRole)
+## Kurulum
 
-**Kurulum:**
-```bash
-composer require modules/auth-module:dev-main
-php artisan migrate
-```
-
----
-
-### 📁 File Manager Module
-**Paket Adı:** `modules/file-manager-module`  
-**Açıklama:** Profesyonel dosya yönetimi modülü (S3, signed URLs, audit logs)  
-**GitHub:** [file-manager-module](https://github.com/abdullahzubeyiryildiz/laravel-modules/tree/master/file-manager-module)
-
-**Özellikler:**
-- ✅ S3/R2/MinIO desteği
-- ✅ Signed URLs (private dosyalar için)
-- ✅ Dosya deduplication
-- ✅ Tenant bazlı izolasyon
-- ✅ Audit logging (RBAC ile)
-- ✅ Image SEO (alt_text, width, height)
-
-**Kurulum:**
-```bash
-composer require modules/file-manager-module:dev-main
-php artisan migrate
-```
-
----
-
-### 🖼️ Image Upload Module
-**Paket Adı:** `modules/image-upload-module`  
-**Açıklama:** Resim yükleme ve işleme modülü (resize, thumbnail, SVG, PDF)  
-**GitHub:** [image-upload-module](https://github.com/abdullahzubeyiryildiz/laravel-modules/tree/master/image-upload-module)
-
-**Özellikler:**
-- ✅ Resim resize ve thumbnail
-- ✅ S3 ve public storage desteği
-- ✅ SVG ve PDF desteği
-- ✅ Intervention Image entegrasyonu
-
-**Kurulum:**
-```bash
-composer require modules/image-upload-module:dev-main
-```
-
----
-
-### 🔔 Notification Module
-**Paket Adı:** `modules/notification-module`  
-**Açıklama:** Bildirim modülü (Mail, SMS, Database notifications)  
-**GitHub:** [notification-module](https://github.com/abdullahzubeyiryildiz/laravel-modules/tree/master/notification-module)
-
-**Özellikler:**
-- ✅ Mail gönderimi (SMTP, Mailgun)
-- ✅ SMS gönderimi (Mutlucell, vb.)
-- ✅ Database notifications (Laravel'in built-in sistemi)
-- ✅ Çoklu provider desteği
-- ✅ Extensible yapı
-
-**Kurulum:**
-```bash
-composer require modules/notification-module:dev-main
-php artisan migrate
-```
-
----
-
-### 🔐 RBAC Module (Opsiyonel)
-**Paket Adı:** `modules/rbac-module`  
-**Açıklama:** Rol ve yetki yönetimi modülü (Role-Based Access Control)  
-**GitHub:** [rbac-module](https://github.com/abdullahzubeyiryildiz/laravel-modules/tree/master/rbac-module)
-
-**Özellikler:**
-- ✅ Rol ve yetki yönetimi
-- ✅ Audit logging
-- ✅ Tenant bazlı izolasyon
-- ✅ Permission kontrolü
-
-**Kurulum:**
-```bash
-composer require modules/rbac-module:dev-main
-php artisan migrate
-```
-
-**Not:** Bu modül opsiyoneldir. Diğer modüller bu modül olmadan da çalışır.
-
----
-
-## 🚀 Hızlı Başlangıç
-
-### 1. Composer.json'a Repository Ekle
+**1.** `composer.json` içine repository ekleyin:
 
 ```json
 {
@@ -120,93 +29,27 @@ php artisan migrate
 }
 ```
 
-### 2. İstediğiniz Modülleri Kur
+**2.** Modülleri kurun (örnek):
 
 ```bash
-# Sadece auth-module
 composer require modules/auth-module:dev-main
-
-# Auth + File Manager
-composer require modules/auth-module:dev-main modules/file-manager-module:dev-main
-
-# Tüm modüller (RBAC hariç)
-composer require \
-    modules/auth-module:dev-main \
-    modules/file-manager-module:dev-main \
-    modules/image-upload-module:dev-main \
-    modules/notification-module:dev-main
-```
-
-### 3. Migration'ları Çalıştır
-
-```bash
+# veya birden fazla: modules/file-manager-module:dev-main vb.
 php artisan migrate
 ```
 
----
+Migration gerektiren modüller: auth-module, file-manager-module, notification-module, rbac-module, role-permission-module. Sadece `composer require` yeterli: image-upload-module.
 
-## 📋 Modül Bağımlılıkları
+## Bağımlılıklar
 
-```
-Auth Module
-├── File Manager Module (opsiyonel - profil resmi için)
-├── Notification Module (opsiyonel - kayıt bildirimleri için)
-└── RBAC Module (opsiyonel - gelişmiş rol yönetimi için)
+- **Auth** → File Manager, Notification, RBAC (hepsi opsiyonel)
+- **File Manager** → Image Upload, RBAC (opsiyonel)
+- **User Management** → Role Permission (rol atama için)
+- **Notification, Image Upload, RBAC, Role Permission** → Bağımsız
 
-File Manager Module
-├── Image Upload Module (opsiyonel - resim işleme için)
-└── RBAC Module (opsiyonel - audit logs için)
+## Dokümantasyon
 
-Notification Module
-└── Bağımsız
-
-Image Upload Module
-└── Bağımsız
-
-RBAC Module
-└── Bağımsız (opsiyonel)
-```
+Her modülün kendi README’si: [auth-module](auth-module/), [file-manager-module](file-manager-module/), [image-upload-module](image-upload-module/), [notification-module](notification-module/), [rbac-module](rbac-module/), [role-permission-module](role-permission-module/).
 
 ---
 
-## 🔧 Özellikler
-
-- ✅ **Modüler Yapı:** Her modül bağımsız kullanılabilir
-- ✅ **Opsiyonel Bağımlılıklar:** RBAC gibi modüller opsiyonel
-- ✅ **Otomatik Kurulum:** Auth Module otomatik olarak User model'ine trait'ler ekler
-- ✅ **Clean Code:** Interface/Contract pattern, SOLID principles
-- ✅ **API Desteği:** Tüm modüller Web ve API endpoint'leri sağlar
-- ✅ **Multi-tenant:** Multi-tenant desteği (opsiyonel)
-
----
-
-## 📚 Dokümantasyon
-
-Her modülün kendi README.md dosyası vardır:
-- [Auth Module README](https://github.com/abdullahzubeyiryildiz/laravel-modules/blob/master/auth-module/README.md)
-- [File Manager Module README](https://github.com/abdullahzubeyiryildiz/laravel-modules/blob/master/file-manager-module/README.md)
-- [Image Upload Module README](https://github.com/abdullahzubeyiryildiz/laravel-modules/blob/master/image-upload-module/README.md)
-- [Notification Module README](https://github.com/abdullahzubeyiryildiz/laravel-modules/blob/master/notification-module/README.md)
-- [RBAC Module README](https://github.com/abdullahzubeyiryildiz/laravel-modules/blob/master/rbac-module/README.md)
-
----
-
-## 📝 Lisans
-
-MIT
-
----
-
-## 👤 Yazar
-
-**Abdullah Zubeyir Yıldız**  
-GitHub: [@abdullahzubeyiryildiz](https://github.com/abdullahzubeyiryildiz)
-
----
-
-## 🤝 Katkıda Bulunma
-
-Pull request'ler memnuniyetle karşılanır. Büyük değişiklikler için lütfen önce bir issue açarak neyi değiştirmek istediğinizi tartışın.
-
----
- 
+**Lisans:** MIT · **Yazar:** [Abdullah Zubeyir Yıldız](https://github.com/abdullahzubeyiryildiz)
